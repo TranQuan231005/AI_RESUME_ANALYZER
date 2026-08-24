@@ -124,7 +124,7 @@ Chỉ ghi nhận để tham khảo sau môn học, không triển khai trong k�
 | BR-10 | Mọi kết quả ghi rõ provider, model, usedFallback và processingMs |
 | BR-11 | Kết quả chỉ được lưu sau khi toàn bộ contract hợp lệ; lỗi phải rollback |
 | BR-12 | USER chỉ đọc analysis_results có user_id bằng ID trong JWT |
-| BR-13 | Danh sách phân trang mặc định page 0, size 10; size tối đa 50 |
+| BR-13 | Danh sách phân trang mặc định page 0, size 10; size tối đa 50 |git switch -c quan-readme
 | BR-14 | Double submit phải bị chặn trên UI; backend không tạo bản ghi nếu request trước thất bại |
 | BR-15 | Raw CV/JD chỉ tồn tại trong bộ nhớ trong thời gian request và không xuất hiện trong log |
 
