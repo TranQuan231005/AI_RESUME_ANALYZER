@@ -15,7 +15,23 @@ class ResumeFeatures:
 
 EMAIL_PATTERN = re.compile(r"\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b", re.IGNORECASE)
 NAME_PATTERN = re.compile(r"^(?:name\s*:\s*)?([A-Za-z]+(?:[ '-][A-Za-z]+){1,5})$")
-IGNORED_HEADINGS = {"resume", "curriculum vitae", "cv", "contact", "profile", "summary"}
+IGNORED_HEADINGS = {
+    "resume",
+    "curriculum vitae",
+    "cv",
+    "contact",
+    "profile",
+    "summary",
+    "professional summary",
+}
+NON_NAME_TERMS = {
+    "analyst",
+    "developer",
+    "engineer",
+    "experienced",
+    "manager",
+    "specialist",
+}
 
 
 def extract_candidate_email(text: str) -> str | None:
@@ -27,6 +43,8 @@ def extract_candidate_name(text: str) -> str | None:
     for line in text.splitlines():
         candidate = " ".join(line.split()).strip()
         if not candidate or candidate.casefold() in IGNORED_HEADINGS:
+            continue
+        if any(term in candidate.casefold().split() for term in NON_NAME_TERMS):
             continue
         match = NAME_PATTERN.fullmatch(candidate)
         if match and not any(char.isdigit() for char in candidate):
