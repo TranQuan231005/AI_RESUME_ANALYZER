@@ -55,7 +55,11 @@ def main():
             sys.exit(1)
 
         if existing_spec != current_spec:
-            print("Error: contracts/openapi/ai-service.json is out of date! Run export_openapi.py to update it.", file=sys.stderr)
+            import difflib
+            existing_lines = json.dumps(existing_spec, indent=2, sort_keys=True).splitlines(keepends=True)
+            current_lines = json.dumps(current_spec, indent=2, sort_keys=True).splitlines(keepends=True)
+            diff = "".join(difflib.unified_diff(existing_lines, current_lines, fromfile="existing", tofile="current"))
+            print("Error: contracts/openapi/ai-service.json is out of date! Diff:\n" + diff, file=sys.stderr)
             sys.exit(1)
         print("OK: contracts/openapi/ai-service.json is up-to-date.")
     else:
