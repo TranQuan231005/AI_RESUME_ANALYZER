@@ -28,6 +28,21 @@ def get_openapi_spec() -> dict:
     return app.openapi()
 
 
+def normalize_spec(d):
+    """Normalize OpenAPI 3.0 vs 3.1 file upload schema differences."""
+    if isinstance(d, dict):
+        normalized = {}
+        for k, v in d.items():
+            normalized[k] = normalize_spec(v)
+        if normalized.get("type") == "string" and normalized.get("format") == "binary":
+            normalized.pop("format", None)
+            normalized["contentMediaType"] = "application/octet-stream"
+        return normalized
+    elif isinstance(d, list):
+        return [normalize_spec(item) for item in d]
+    return d
+
+
 def main():
     parser = argparse.ArgumentParser(description="Export or check OpenAPI spec for ai-service.")
     parser.add_argument(
@@ -54,10 +69,13 @@ def main():
             print(f"Error reading existing OpenAPI spec: {e}", file=sys.stderr)
             sys.exit(1)
 
-        if existing_spec != current_spec:
+        norm_existing = normalize_spec(existing_spec)
+        norm_current = normalize_spec(current_spec)
+
+        if norm_existing != norm_current:
             import difflib
-            existing_lines = json.dumps(existing_spec, indent=2, sort_keys=True).splitlines(keepends=True)
-            current_lines = json.dumps(current_spec, indent=2, sort_keys=True).splitlines(keepends=True)
+            existing_lines = json.dumps(norm_existing, indent=2, sort_keys=True).splitlines(keepends=True)
+            current_lines = json.dumps(norm_current, indent=2, sort_keys=True).splitlines(keepends=True)
             diff = "".join(difflib.unified_diff(existing_lines, current_lines, fromfile="existing", tofile="current"))
             print("Error: contracts/openapi/ai-service.json is out of date! Diff:\n" + diff, file=sys.stderr)
             sys.exit(1)
