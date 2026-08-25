@@ -1,0 +1,9 @@
+{
+  "timestamp": "2026-08-21T08:30:00Z",
+  "status": 422,
+  "code": "TEXT_NOT_EXTRACTABLE",
+  "message": "The PDF does not contain readable text.",
+  "path": "/api/analyses/resume",
+  "fieldErrors": {},
+  "requestId": "req-7f13d0"
+}
