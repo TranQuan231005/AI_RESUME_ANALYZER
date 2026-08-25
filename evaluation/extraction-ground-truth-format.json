@@ -1,0 +1,22 @@
+{
+  "version": "2026-08-24",
+  "owner": "TV2",
+  "items": [
+    {
+      "id": "sample-resume-001",
+      "inputText": "Alex Morgan\nalex@example.test\nPython, sklearn, and SQL",
+      "expected": {
+        "candidateName": "Alex Morgan",
+        "candidateEmail": "alex@example.test",
+        "skills": ["Python", "scikit-learn", "SQL"],
+        "predictedField": "Data Science"
+      }
+    }
+  ],
+  "metrics": {
+    "skillPrecision": "canonical true positives / predicted canonical skills",
+    "skillRecall": "canonical true positives / expected canonical skills",
+    "skillF1": "harmonic mean of precision and recall",
+    "fieldAccuracy": "predictedField equals expected predictedField"
+  }
+}
