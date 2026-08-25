@@ -18,4 +18,13 @@
     "types": ["jest", "node"]
   },
   "include": ["src"]
+    "module": "commonjs",
+    "jsx": "react",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true,
+    "strict": true
+  },
+  "include": ["src/**/*"]
 }
