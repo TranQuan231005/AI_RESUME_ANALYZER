@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+
+jobs:
+  contract-and-ai-service:
+    name: Contract Verification & AI Service Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pydantic fastapi pytest uvicorn python-multipart
+
+      - name: Verify OpenAPI Specification Up-To-Date
+        run: |
+          python scripts/export_openapi.py --check
+
+      - name: Run Pytest (Contracts & AI Service)
+        run: |
+          pytest
+
+  backend-check:
+    name: Backend Build & Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: "temurin"
+          cache: "maven"
+
+      - name: Run Backend Tests
+        run: |
+          if [ -f "backend/pom.xml" ]; then
+            cd backend && ./mvnw test -B
+          else
+            echo "backend/pom.xml not found yet, skipping backend build."
+          fi
+
+  frontend-check:
+    name: Frontend Lint & Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache-dependency-path: "frontend/package-lock.json"
+
+      - name: Run Frontend Lint and Tests
+        run: |
+          if [ -f "frontend/package.json" ]; then
+            cd frontend && npm ci && npm test --if-present
+          else
+            echo "frontend/package.json not found yet, skipping frontend build."
+          fi

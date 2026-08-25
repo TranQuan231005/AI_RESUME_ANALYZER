@@ -1,0 +1,37 @@
+{
+  "fileName": "alex_resume.pdf",
+  "candidateName": "Alex Morgan",
+  "candidateEmail": "alex@example.test",
+  "skills": ["Python", "SQL", "Pandas"],
+  "predictedField": "Data Science",
+  "fieldEvidence": [
+    {
+      "field": "Data Science",
+      "matchedSkills": ["Python", "Pandas"],
+      "confidence": 0.8
+    }
+  ],
+  "resumeScore": 71,
+  "scoreBreakdown": {
+    "contact": 5,
+    "summary": 8,
+    "skills": 12,
+    "education": 8,
+    "experience": 15,
+    "projects": 10,
+    "achievementsCertifications": 5,
+    "quantifiedImpact": 8,
+    "total": 71
+  },
+  "recommendedSkills": ["Machine Learning", "Docker", "Git"],
+  "recommendations": [
+    "Highlight quantifiable metrics in your experience section to demonstrate business impact.",
+    "Add relevant industry certifications to strengthen your technical profile."
+  ],
+  "ai": {
+    "provider": "RULE_BASED",
+    "model": "deterministic-v1",
+    "usedFallback": true,
+    "processingMs": 420
+  }
+}

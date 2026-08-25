@@ -1,0 +1,23 @@
+{
+  "fileName": "alex_resume.pdf",
+  "targetRole": "Data Analyst",
+  "matchScore": 67,
+  "matchedSkills": ["Python", "SQL"],
+  "missingSkills": ["Power BI"],
+  "atsKeywords": ["data visualization", "stakeholder reporting"],
+  "strengths": [
+    "Strong SQL coverage."
+  ],
+  "weaknesses": [
+    "No evidence of Power BI."
+  ],
+  "recommendations": [
+    "Add a dashboard project with measurable outcomes."
+  ],
+  "ai": {
+    "provider": "RULE_BASED",
+    "model": "deterministic-v1",
+    "usedFallback": true,
+    "processingMs": 740
+  }
+}

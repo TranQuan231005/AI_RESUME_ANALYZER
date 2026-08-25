@@ -1,0 +1,11 @@
+{
+  "timestamp": "2026-08-21T08:30:00Z",
+  "status": 422,
+  "code": "JD_REQUIRED",
+  "message": "Job description is missing or shorter than 50 characters.",
+  "path": "/api/analyses/match",
+  "fieldErrors": {
+    "jobDescription": "Must be at least 50 characters long"
+  },
+  "requestId": "req-422-jdreq"
+}

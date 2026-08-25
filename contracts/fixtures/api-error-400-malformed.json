@@ -1,0 +1,11 @@
+{
+  "timestamp": "2026-08-21T08:30:00Z",
+  "status": 400,
+  "code": "MALFORMED_REQUEST",
+  "message": "The request body contains invalid parameters or malformed JSON.",
+  "path": "/api/analyses",
+  "fieldErrors": {
+    "size": "Size must be between 1 and 50"
+  },
+  "requestId": "req-400-abc1"
+}
