@@ -1,0 +1,18 @@
+{
+  "candidateName": "Alex Morgan",
+  "candidateEmail": "alex@example.test",
+  "skills": ["Python", "scikit-learn", "SQL"],
+  "predictedField": "Data Science",
+  "fieldEvidence": [
+    {
+      "field": "Data Science",
+      "matchedSkills": ["Python", "scikit-learn", "SQL"],
+      "confidence": 1.0
+    },
+    {
+      "field": "Web Development",
+      "matchedSkills": ["SQL"],
+      "confidence": 0.33
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "timestamp": "2026-08-21T08:30:00Z",
+  "status": 404,
+  "code": "NOT_FOUND",
+  "message": "The requested resource was not found.",
+  "path": "/api/analyses/9999",
+  "fieldErrors": {},
+  "requestId": "req-404-notfound"
+}

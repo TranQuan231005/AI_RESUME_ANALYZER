@@ -1,0 +1,23 @@
+{
+  "version": "2026-08-24",
+  "owner": "TV2",
+  "rules": {
+    "canonicalName": "Unique, case-insensitive display name used in all contracts.",
+    "aliases": "Case-insensitive input forms. Each alias maps to exactly one canonical skill.",
+    "fields": "One or more supported fields linked to the canonical skill.",
+    "matching": "Aliases are matched with clear alphanumeric boundaries and returned once in input order."
+  },
+  "fields": [
+    "Data Science",
+    "Web Development",
+    "Android Development",
+    "iOS Development",
+    "UI/UX",
+    "Unknown"
+  ],
+  "entryShape": {
+    "canonicalName": "string",
+    "aliases": ["string"],
+    "fields": ["string"]
+  }
+}
