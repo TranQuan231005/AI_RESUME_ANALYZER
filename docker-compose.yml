@@ -1,0 +1,93 @@
+version: "3.8"
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: resume_analyzer_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${DB_NAME:-resume_analyzer}
+      MYSQL_USER: ${DB_USER:-analyzer_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-analyzer_pass}
+    ports:
+      - "${DB_PORT:-3306}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD:-rootpassword}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  ai-service:
+    build:
+      context: ./ai-service
+      dockerfile: Dockerfile
+    container_name: resume_analyzer_ai
+    restart: unless-stopped
+    environment:
+      PORT: 8000
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen3:4b}
+      AI_TIMEOUT_SECONDS: ${AI_TIMEOUT_SECONDS:-60}
+    ports:
+      - "8000:8000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: resume_analyzer_backend
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      ai-service:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-docker}
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME:-resume_analyzer}
+      DB_USER: ${DB_USER:-analyzer_user}
+      DB_PASSWORD: ${DB_PASSWORD:-analyzer_pass}
+      JWT_SECRET: ${JWT_SECRET:-9f8a7c6b5e4d3c2b1a0f9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a2f1e0d9c8b}
+      JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS:-7200000}
+      AI_SERVICE_URL: http://ai-service:8000
+      SEED_USER_EMAIL: ${SEED_USER_EMAIL:-user@example.test}
+      SEED_USER_PASSWORD: ${SEED_USER_PASSWORD:-User@123456}
+      SEED_USER_FULL_NAME: ${SEED_USER_FULL_NAME:-Demo User}
+      SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-admin@example.test}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-Admin@123456}
+      SEED_ADMIN_FULL_NAME: ${SEED_ADMIN_FULL_NAME:-Demo Admin}
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: resume_analyzer_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      VITE_API_BASE_URL: http://localhost:8080
+    ports:
+      - "5173:5173"
+
+volumes:
+  mysql_data:

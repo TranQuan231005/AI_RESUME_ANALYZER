@@ -1,0 +1,9 @@
+{
+  "timestamp": "2026-08-21T08:30:00Z",
+  "status": 422,
+  "code": "PDF_NOT_READABLE",
+  "message": "The PDF file is corrupted or password protected.",
+  "path": "/api/analyses/resume",
+  "fieldErrors": {},
+  "requestId": "req-422-notread"
+}

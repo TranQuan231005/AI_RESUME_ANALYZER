@@ -141,19 +141,19 @@ Done criteria:
 Issue IDs ưu tiên: T1.1, T2.1, T3.1, T4.1, T5.1
 
 #### TV5 (owner chính)
-- [ ] Tạo Pydantic schemas: Auth, ParsedDocument, ResumeFeatures, ResumeAnalysisResult, MatchResult, ApiError
-- [ ] Export OpenAPI baseline
-- [ ] Tạo valid/error fixtures công khai
-- [ ] Định nghĩa contract request/response mẫu
-- [ ] Cấu hình docker-compose.yml, .env.example, env list
-- [ ] Đặt baseline CI và health-check
-- [ ] Output: contract chuẩn để các TV khác dùng
+- [x] Tạo Pydantic schemas: Auth, ParsedDocument, ResumeFeatures, ResumeAnalysisResult, MatchResult, ApiError
+- [x] Export OpenAPI baseline
+- [x] Tạo valid/error fixtures công khai
+- [x] Định nghĩa contract request/response mẫu
+- [x] Cấu hình docker-compose.yml, .env.example, env list
+- [x] Đặt baseline CI và health-check
+- [x] Output: contract chuẩn để các TV khác dùng
 
 Reviewer: TV1
 Phụ thuộc: không có
 Done criteria:
-- [ ] Contract được review và dùng làm nền cho các module khác
-- [ ] Các fixture valid/error được làm sẵn
+- [x] Contract được review và dùng làm nền cho các module khác
+- [x] Các fixture valid/error được làm sẵn
 
 #### TV1
 - [ ] Review contract auth + PDF với TV5
@@ -201,19 +201,19 @@ Done criteria:
 Issue IDs ưu tiên: T1.2, T2.1, T3.1, T4.1, T5.1
 
 #### TV5 (owner chính)
-- [ ] Finalize Pydantic/OpenAPI cho toàn bộ flow
-- [ ] Chốt valid/error fixtures
-- [ ] Kiểm tra required/nullable/default đúng
-- [ ] Tạo danh sách approval mặc định cho từng contract: Auth, ParsedDocument, ResumeFeatures, ScoreResult, MatchResult, ApiError
-- [ ] Output: freeze contract toàn dự án
+- [x] Finalize Pydantic/OpenAPI cho toàn bộ flow
+- [x] Chốt valid/error fixtures
+- [x] Kiểm tra required/nullable/default đúng
+- [x] Tạo danh sách approval mặc định cho từng contract: Auth, ParsedDocument, ResumeFeatures, ScoreResult, MatchResult, ApiError
+- [x] Output: freeze contract toàn dự án
 
 Reviewer: TV1 + TV2 + TV3 + TV4
 Phụ thuộc: D2 đã có baseline
 Done criteria:
-- [ ] Không còn thay đổi schema không rõ lý do
-- [ ] TV1, TV2, TV3, TV4 đồng thuận
-- [ ] M0 approval gate được ký xong trước khi sang D4
-- [ ] Nếu có schema thay đổi sau D3, phải mở Contract Change Request mới
+- [x] Không còn thay đổi schema không rõ lý do
+- [x] TV1, TV2, TV3, TV4 đồng thuận
+- [x] M0 approval gate được ký xong trước khi sang D4
+- [x] Nếu có schema thay đổi sau D3, phải mở Contract Change Request mới
 
 #### TV1
 - [ ] Chốt ParsedDocument contract

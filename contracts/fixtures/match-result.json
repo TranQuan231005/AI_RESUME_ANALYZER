@@ -1,0 +1,25 @@
+{
+  "fileName": "alex_resume.pdf",
+  "targetRole": "Data Analyst",
+  "matchScore": 67,
+  "matchedSkills": ["Python", "SQL"],
+  "missingSkills": ["Power BI", "Tableau"],
+  "atsKeywords": ["data visualization", "stakeholder reporting", "statistical analysis"],
+  "strengths": [
+    "Strong core programming and database query skills with Python and SQL.",
+    "Relevant background in data preprocessing and modeling."
+  ],
+  "weaknesses": [
+    "Missing business intelligence tools such as Power BI or Tableau required by the JD."
+  ],
+  "recommendations": [
+    "Add a dedicated project demonstrating dashboard creation in Power BI or Tableau.",
+    "Incorporate business reporting keywords into the professional summary."
+  ],
+  "ai": {
+    "provider": "OLLAMA",
+    "model": "qwen3:4b",
+    "usedFallback": false,
+    "processingMs": 3520
+  }
+}
