@@ -1,0 +1,14 @@
+    # Node dependencies
+node_modules/
+**/node_modules/
+
+# Python & Pytest
+__pycache__/
+.pytest_cache/
+**/.pytest_cache/
+
+# Build outputs & Environment
+dist/
+build/
+.env
+*.log
