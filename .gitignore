@@ -1,0 +1,27 @@
+# Node / React Dependencies
+node_modules/
+**/node_modules/
+.npm/
+build/
+dist/
+
+# Python / Pytest / Recommend Engine
+__pycache__/
+**/__pycache__/
+.pytest_cache/
+**/.pytest_cache/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+
+# Environment & Secrets
+.env
+.env.local
+.env.*.local
+
+# System & IDE Files
+.DS_Store
+Thumbs.db
+*.log
