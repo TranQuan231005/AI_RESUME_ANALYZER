@@ -1,0 +1,11 @@
+{
+  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiZW1haWwiOiJ1c2VyQGV4YW1wbGUudGVzdCIsInJvbGUiOiJVU0VSIiwiaWF0IjoxNzg3NTY4MDAwLCJleHAioxNzg3NTc1MjAwfQ.mockSignature",
+  "tokenType": "Bearer",
+  "expiresIn": 7200,
+  "user": {
+    "id": 1,
+    "email": "user@example.test",
+    "fullName": "Demo User",
+    "role": "USER"
+  }
+}

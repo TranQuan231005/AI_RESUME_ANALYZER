@@ -1,0 +1,11 @@
+{
+  "timestamp": "2026-08-21T08:30:00Z",
+  "status": 422,
+  "code": "INVALID_PDF",
+  "message": "The uploaded file has invalid MIME type or magic header bytes.",
+  "path": "/api/analyses/resume",
+  "fieldErrors": {
+    "file": "Must be a valid PDF document"
+  },
+  "requestId": "req-422-invpdf"
+}

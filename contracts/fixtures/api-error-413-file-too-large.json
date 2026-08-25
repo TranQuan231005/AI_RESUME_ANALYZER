@@ -1,0 +1,9 @@
+{
+  "timestamp": "2026-08-21T08:30:00Z",
+  "status": 413,
+  "code": "FILE_TOO_LARGE",
+  "message": "Uploaded file exceeds maximum allowed limit of 5 MB.",
+  "path": "/api/analyses/resume",
+  "fieldErrors": {},
+  "requestId": "req-413-toolarge"
+}

@@ -1,0 +1,9 @@
+{
+  "timestamp": "2026-08-21T08:30:00Z",
+  "status": 502,
+  "code": "AI_SERVICE_ERROR",
+  "message": "AI service and fallback failed to produce a valid result.",
+  "path": "/api/analyses/resume",
+  "fieldErrors": {},
+  "requestId": "req-502-aiserverr"
+}

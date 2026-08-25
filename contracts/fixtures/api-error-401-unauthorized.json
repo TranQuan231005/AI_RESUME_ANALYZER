@@ -1,0 +1,9 @@
+{
+  "timestamp": "2026-08-21T08:30:00Z",
+  "status": 401,
+  "code": "UNAUTHORIZED",
+  "message": "Missing, invalid, or expired JWT access token.",
+  "path": "/api/me",
+  "fieldErrors": {},
+  "requestId": "req-401-unauth"
+}
