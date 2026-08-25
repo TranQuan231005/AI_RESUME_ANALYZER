@@ -1,0 +1,9 @@
+{
+  "timestamp": "2026-08-21T08:30:00Z",
+  "status": 500,
+  "code": "INTERNAL_ERROR",
+  "message": "An internal server error occurred. Please try again later.",
+  "path": "/api/analyses/resume",
+  "fieldErrors": {},
+  "requestId": "req-500-interr"
+}

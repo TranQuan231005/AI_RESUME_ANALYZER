@@ -1,0 +1,2 @@
+# Điền GitHub Personal Access Token (Classic) của bạn vào đây (hoặc dùng biến môi trường GITHUB_TOKEN):
+github_token: "YOUR_GITHUB_TOKEN_HERE"

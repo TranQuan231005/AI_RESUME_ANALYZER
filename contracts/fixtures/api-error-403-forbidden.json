@@ -1,0 +1,9 @@
+{
+  "timestamp": "2026-08-21T08:30:00Z",
+  "status": 403,
+  "code": "FORBIDDEN",
+  "message": "Access denied. Required role or resource ownership missing.",
+  "path": "/api/admin/users",
+  "fieldErrors": {},
+  "requestId": "req-403-forbid"
+}

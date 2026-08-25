@@ -1,0 +1,78 @@
+{
+  "valid_cases": [
+    {
+      "name": "Standard Resume Score",
+      "breakdown": {
+        "contact": 5,
+        "summary": 8,
+        "skills": 12,
+        "education": 8,
+        "experience": 15,
+        "projects": 10,
+        "achievementsCertifications": 5,
+        "quantifiedImpact": 8,
+        "total": 71
+      }
+    },
+    {
+      "name": "Perfect Resume Score",
+      "breakdown": {
+        "contact": 5,
+        "summary": 10,
+        "skills": 15,
+        "education": 10,
+        "experience": 20,
+        "projects": 15,
+        "achievementsCertifications": 10,
+        "quantifiedImpact": 15,
+        "total": 100
+      }
+    },
+    {
+      "name": "Zero Resume Score",
+      "breakdown": {
+        "contact": 0,
+        "summary": 0,
+        "skills": 0,
+        "education": 0,
+        "experience": 0,
+        "projects": 0,
+        "achievementsCertifications": 0,
+        "quantifiedImpact": 0,
+        "total": 0
+      }
+    }
+  ],
+  "invalid_cases": [
+    {
+      "name": "Total mismatch with sum of breakdown",
+      "breakdown": {
+        "contact": 5,
+        "summary": 8,
+        "skills": 12,
+        "education": 8,
+        "experience": 15,
+        "projects": 10,
+        "achievementsCertifications": 5,
+        "quantifiedImpact": 8,
+        "total": 80
+      },
+      "error": "SUM_MISMATCH"
+    },
+    {
+      "name": "Contact score exceeds maximum of 5",
+      "breakdown": {
+        "contact": 10,
+        "summary": 8,
+        "skills": 12,
+        "education": 8,
+        "experience": 15,
+        "projects": 10,
+        "achievementsCertifications": 5,
+        "quantifiedImpact": 8,
+        "total": 76
+      },
+      "error": "OUT_OF_BOUNDS"
+    }
+  ]
+}
