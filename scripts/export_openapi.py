@@ -47,8 +47,14 @@ def main():
         if not output_path.exists():
             print(f"Error: OpenAPI spec not found at {output_path}. Run without --check first.", file=sys.stderr)
             sys.exit(1)
-        existing_json = output_path.read_text(encoding="utf-8")
-        if existing_json.strip() != current_json.strip():
+        
+        try:
+            existing_spec = json.loads(output_path.read_text(encoding="utf-8"))
+        except Exception as e:
+            print(f"Error reading existing OpenAPI spec: {e}", file=sys.stderr)
+            sys.exit(1)
+
+        if existing_spec != current_spec:
             print("Error: contracts/openapi/ai-service.json is out of date! Run export_openapi.py to update it.", file=sys.stderr)
             sys.exit(1)
         print("OK: contracts/openapi/ai-service.json is up-to-date.")
