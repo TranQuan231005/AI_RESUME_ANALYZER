@@ -598,7 +598,7 @@ Done criteria:
 Issue IDs ưu tiên: T5.2, T5.3, T5.6, T1.5, T2.6, T3.6
 
 #### TV5 (owner chính)
-- [ ] Implement Ollama client với timeout và JSON mode
+- [x] Implement Ollama client với timeout và JSON mode
 - [ ] Implement orchestration + validation + deterministic fallback
 - [ ] Output: AI pipeline stable
 
