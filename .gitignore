@@ -1,59 +1,27 @@
-# Python
+# Node / React Dependencies
+node_modules/
+**/node_modules/
+.npm/
+build/
+dist/
+
+# Python / Pytest / Recommend Engine
 __pycache__/
+**/__pycache__/
+.pytest_cache/
+**/.pytest_cache/
 *.py[cod]
 *$py.class
-*.so
-.Python
-env/
-venv/
 .venv/
-ENV/
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-.pytest_cache/
-.coverage
-htmlcov/
+venv/
+env/
 
-# Environment variables & local secrets
+# Environment & Secrets
 .env
 .env.local
-*.env
-scripts/config.yml
+.env.*.local
 
-# Node.js / Frontend
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.next/
-out/
-.nuxt/
-dist/
-
-# Java / Maven / Gradle
-target/
-*.class
-.mvn/wrapper/maven-wrapper.jar
-.gradle/
-build/
-
-# IDE / OS
-.idea/
-.vscode/
-*.swp
-*.swo
+# System & IDE Files
 .DS_Store
 Thumbs.db
+*.log
