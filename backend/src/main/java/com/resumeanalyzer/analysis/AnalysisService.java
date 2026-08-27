@@ -1,0 +1,90 @@
+package com.resumeanalyzer.analysis;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.resumeanalyzer.analysis.dto.AnalysisDetailResponse;
+import com.resumeanalyzer.analysis.dto.AnalysisSummaryDto;
+import com.resumeanalyzer.analysis.dto.PagedAnalysisSummary;
+import com.resumeanalyzer.user.User;
+import com.resumeanalyzer.user.UserRepository;
+import java.util.Map;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+
+@Service
+public class AnalysisService {
+    private final AnalysisResultRepository repository;
+    private final UserRepository userRepository;
+    private final ObjectMapper objectMapper;
+
+    public AnalysisService(
+        AnalysisResultRepository repository,
+        UserRepository userRepository,
+        ObjectMapper objectMapper
+    ) {
+        this.repository = repository;
+        this.userRepository = userRepository;
+        this.objectMapper = objectMapper;
+    }
+
+    public AnalysisResult saveResult(Long userId, AnalysisResult result) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
+        result.setUser(user);
+        return repository.save(result);
+    }
+
+    public PagedAnalysisSummary getHistory(Long userId, int page, int size, String type) {
+        PageRequest pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<AnalysisResult> results = type == null || type.isBlank()
+            ? repository.findByUserId(userId, pageable)
+            : repository.findByUserIdAndAnalysisType(userId, type, pageable);
+
+        return new PagedAnalysisSummary(
+            results.map(this::toSummary).toList(),
+            results.getNumber(),
+            results.getSize(),
+            results.getTotalElements(),
+            results.getTotalPages()
+        );
+    }
+
+    public AnalysisDetailResponse getDetail(Long userId, Long id) {
+        AnalysisResult result = repository.findByIdAndUserId(id, userId)
+            .orElseThrow(() -> new AnalysisNotFoundException(id));
+        return new AnalysisDetailResponse(
+            result.getId(),
+            result.getAnalysisType(),
+            result.getFileName(),
+            result.getCreatedAt(),
+            parseJson(result.getResultJson())
+        );
+    }
+
+    private AnalysisSummaryDto toSummary(AnalysisResult result) {
+        return new AnalysisSummaryDto(
+            result.getId(),
+            result.getAnalysisType(),
+            result.getFileName(),
+            result.getCandidateName(),
+            result.getPredictedField(),
+            result.getResumeScore(),
+            result.getMatchScore(),
+            result.getTargetRole(),
+            result.getAiProvider(),
+            result.isUsedFallback(),
+            result.getCreatedAt()
+        );
+    }
+
+    private JsonNode parseJson(String json) {
+        try {
+            return objectMapper.readTree(json);
+        } catch (JsonProcessingException ex) {
+            return objectMapper.valueToTree(Map.of("raw", json));
+        }
+    }
+}
