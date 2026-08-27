@@ -5,8 +5,12 @@ from fastapi.responses import JSONResponse
 from app.schemas import (
     HealthResponse,
     MatchResult,
+    ParsedDocument,
     ResumeAnalysisResult,
+    ResumeFeatures,
 )
+from app.extraction.features import extract_features
+from app.extraction.classifier import classify_features
 
 app = FastAPI(
     title="AI Resume Analyzer - AI Service",
@@ -27,6 +31,25 @@ async def health_check() -> HealthResponse:
         status="healthy",
         model="qwen3:4b",
         ollamaReachable=False,
+    )
+
+
+@app.post(
+    "/api/extract-features",
+    response_model=ResumeFeatures,
+    summary="Extract resume features from parsed document",
+    tags=["Extraction"],
+)
+async def extract_resume_features(document: ParsedDocument) -> ResumeFeatures:
+    """Extract candidate metadata, canonical skills, and predicted field."""
+    extracted = extract_features(document.text)
+    classified = classify_features(extracted)
+    return ResumeFeatures(
+        candidateName=classified.candidate_name,
+        candidateEmail=classified.candidate_email,
+        skills=classified.skills,
+        predictedField=classified.predicted_field,
+        fieldEvidence=classified.field_evidence or [],
     )
 
 
