@@ -28,6 +28,48 @@
         }
       }
     },
+    "/api/extract-features": {
+      "post": {
+        "tags": [
+          "Extraction"
+        ],
+        "summary": "Extract resume features from parsed document",
+        "description": "Extract candidate metadata, canonical skills, and predicted field.",
+        "operationId": "extract_resume_features_api_extract_features_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ParsedDocument"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResumeFeatures"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/analyze-resume": {
       "post": {
         "tags": [
@@ -347,6 +389,38 @@
         ],
         "title": "MatchResult"
       },
+      "ParsedDocument": {
+        "properties": {
+          "fileName": {
+            "type": "string",
+            "title": "Filename"
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Text"
+          },
+          "pageCount": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Pagecount"
+          },
+          "sizeBytes": {
+            "type": "integer",
+            "maximum": 5242880.0,
+            "minimum": 1.0,
+            "title": "Sizebytes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "fileName",
+          "text",
+          "pageCount",
+          "sizeBytes"
+        ],
+        "title": "ParsedDocument"
+      },
       "ResumeAnalysisResult": {
         "properties": {
           "fileName": {
@@ -430,6 +504,52 @@
           "ai"
         ],
         "title": "ResumeAnalysisResult"
+      },
+      "ResumeFeatures": {
+        "properties": {
+          "candidateName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Candidatename"
+          },
+          "candidateEmail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Candidateemail"
+          },
+          "skills": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Skills"
+          },
+          "predictedField": {
+            "$ref": "#/components/schemas/FieldEnum",
+            "default": "Unknown"
+          },
+          "fieldEvidence": {
+            "items": {
+              "$ref": "#/components/schemas/FieldEvidence"
+            },
+            "type": "array",
+            "title": "Fieldevidence"
+          }
+        },
+        "type": "object",
+        "title": "ResumeFeatures"
       },
       "ScoreBreakdown": {
         "properties": {
