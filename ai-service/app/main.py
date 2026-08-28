@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Annotated, Optional
 from fastapi import FastAPI, File, Form, UploadFile
 from fastapi.responses import JSONResponse
 
@@ -74,9 +74,25 @@ async def analyze_resume(
     tags=["Matching"],
 )
 async def analyze_match(
-    file: UploadFile = File(..., description="Resume PDF file (max 5 MB)"),
-    job_description: str = Form(..., alias="jobDescription", min_length=50, description="Job description text"),
-    target_role: Optional[str] = Form(None, alias="targetRole", description="Target role name (optional)"),
+    file: Annotated[
+        UploadFile,
+        File(description="Resume PDF file (max 5 MB)"),
+    ],
+    job_description: Annotated[
+        str,
+        Form(
+            alias="jobDescription",
+            min_length=50,
+            description="Job description text",
+        ),
+    ],
+    target_role: Annotated[
+        Optional[str],
+        Form(
+            alias="targetRole",
+            description="Target role name (optional)",
+        ),
+    ] = None,
 ) -> MatchResult:
     """Match resume features against job description skills and ATS criteria."""
     # Stubs for D2 - actual pipeline implementation is in later tasks
