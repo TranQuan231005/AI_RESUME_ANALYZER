@@ -2,6 +2,7 @@ package com.resumeanalyzer.common;
 
 import com.resumeanalyzer.analysis.AnalysisForbiddenException;
 import com.resumeanalyzer.analysis.AnalysisNotFoundException;
+import com.resumeanalyzer.auth.InvalidCredentialsException;
 import com.resumeanalyzer.security.UnauthenticatedException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
@@ -22,6 +23,12 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class ApiExceptionHandler {
+    @ExceptionHandler(InvalidCredentialsException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public ApiError handleInvalidCredentials(InvalidCredentialsException ex, HttpServletRequest request) {
+        return error(401, "BAD_CREDENTIALS", ex.getMessage(), request);
+    }
+
     @ExceptionHandler(AnalysisNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ApiError handleNotFound(AnalysisNotFoundException ex, HttpServletRequest request) {

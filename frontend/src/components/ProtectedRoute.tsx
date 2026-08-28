@@ -1,20 +1,20 @@
 import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth, type UserRole } from '../context/AuthContext';
 
 interface ProtectedRouteProps {
-  allowedRoles?: string[];
+  allowedRoles?: UserRole[];
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles }) => {
-  const { token, role } = useAuth();
+  const { token, user } = useAuth();
 
-  if (!token) {
+  if (!token || !user) {
     return <Navigate to="/login" replace />;
   }
 
-  if (allowedRoles && role && !allowedRoles.includes(role)) {
-    return <Navigate to="/" replace />;
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
+    return <Navigate to={user.role === 'ADMIN' ? '/admin' : '/dashboard'} replace />;
   }
 
   return <Outlet />;

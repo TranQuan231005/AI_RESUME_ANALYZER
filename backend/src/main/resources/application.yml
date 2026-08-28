@@ -12,3 +12,19 @@ spring:
 
 server:
   port: ${PORT:8080}
+
+app:
+  security:
+    jwt:
+      secret: ${JWT_SECRET:}
+      expiration-ms: ${JWT_EXPIRATION_MS:7200000}
+  seed:
+    enabled: ${SEED_USERS_ENABLED:false}
+    user:
+      email: ${SEED_USER_EMAIL:}
+      password: ${SEED_USER_PASSWORD:}
+      full-name: ${SEED_USER_FULL_NAME:}
+    admin:
+      email: ${SEED_ADMIN_EMAIL:}
+      password: ${SEED_ADMIN_PASSWORD:}
+      full-name: ${SEED_ADMIN_FULL_NAME:}

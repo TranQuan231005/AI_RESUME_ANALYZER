@@ -62,6 +62,7 @@ services:
       JWT_SECRET: ${JWT_SECRET:-9f8a7c6b5e4d3c2b1a0f9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a2f1e0d9c8b}
       JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS:-7200000}
       AI_SERVICE_URL: http://ai-service:8000
+      SEED_USERS_ENABLED: ${SEED_USERS_ENABLED:-true}
       SEED_USER_EMAIL: ${SEED_USER_EMAIL:-user@example.test}
       SEED_USER_PASSWORD: ${SEED_USER_PASSWORD:-User@123456}
       SEED_USER_FULL_NAME: ${SEED_USER_FULL_NAME:-Demo User}
@@ -85,7 +86,7 @@ services:
     depends_on:
       - backend
     environment:
-      VITE_API_BASE_URL: http://localhost:8080
+      VITE_API_BASE_URL: http://backend:8080
     ports:
       - "5173:5173"
 

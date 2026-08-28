@@ -1,0 +1,7 @@
+app:
+  security:
+    jwt:
+      secret: test-only-jwt-secret-with-at-least-32-bytes
+      expiration-ms: 7200000
+  seed:
+    enabled: false

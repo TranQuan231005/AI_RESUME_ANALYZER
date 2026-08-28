@@ -78,22 +78,23 @@ async def analyze_match(
         UploadFile,
         File(description="Resume PDF file (max 5 MB)"),
     ],
-    job_description: Annotated[
+    jobDescription: Annotated[
         str,
         Form(
-            alias="jobDescription",
             min_length=50,
             description="Job description text",
         ),
     ],
-    target_role: Annotated[
+    targetRole: Annotated[
         Optional[str],
         Form(
-            alias="targetRole",
             description="Target role name (optional)",
         ),
     ] = None,
 ) -> MatchResult:
     """Match resume features against job description skills and ATS criteria."""
+    job_description = jobDescription
+    target_role = targetRole
+    _ = (job_description, target_role)
     # Stubs for D2 - actual pipeline implementation is in later tasks
     raise NotImplementedError("Pipeline implementation will be integrated in D7-D8")
