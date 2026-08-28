@@ -1,0 +1,114 @@
+{
+  "version": "1.0.0",
+  "formula": "round(100 * count(matchedSkills) / count(jdSkills)); zero when jdSkills is empty",
+  "pairs": [
+    {
+      "id": "pair-data-analyst-perfect",
+      "jobDescriptionId": "jd-data-analyst",
+      "resumeSkills": ["Python", "SQL", "Pandas"],
+      "expectedMatchedSkills": ["Python", "SQL", "Pandas"],
+      "expectedMissingSkills": [],
+      "expectedScore": 100,
+      "reason": "The resume includes every canonical skill required by the data analyst description."
+    },
+    {
+      "id": "pair-data-analyst-partial",
+      "jobDescriptionId": "jd-data-analyst",
+      "resumeSkills": ["PYTHON", "sql"],
+      "expectedMatchedSkills": ["Python", "SQL"],
+      "expectedMissingSkills": ["Pandas"],
+      "expectedScore": 67,
+      "reason": "Two of the three required skills are present after case-insensitive normalization."
+    },
+    {
+      "id": "pair-ml-engineer-aliases",
+      "jobDescriptionId": "jd-ml-engineer",
+      "resumeSkills": ["python", "SKLearn", "scikit-learn"],
+      "expectedMatchedSkills": ["Python", "scikit-learn"],
+      "expectedMissingSkills": ["NumPy", "TensorFlow", "SQL"],
+      "expectedScore": 40,
+      "reason": "The duplicate scikit-learn aliases collapse to one match, producing two matches out of five."
+    },
+    {
+      "id": "pair-frontend-perfect",
+      "jobDescriptionId": "jd-frontend-engineer",
+      "resumeSkills": ["React.js", "ts", "JS", "HTML", "CSS"],
+      "expectedMatchedSkills": ["React", "TypeScript", "JavaScript", "HTML", "CSS"],
+      "expectedMissingSkills": [],
+      "expectedScore": 100,
+      "reason": "Every frontend requirement is present, including recognized React and language aliases."
+    },
+    {
+      "id": "pair-full-stack-partial",
+      "jobDescriptionId": "jd-full-stack-developer",
+      "resumeSkills": ["javascript", "reactjs", "css"],
+      "expectedMatchedSkills": ["JavaScript", "React", "CSS"],
+      "expectedMissingSkills": ["TypeScript", "SQL"],
+      "expectedScore": 60,
+      "reason": "Three of five web skills match and the result retains the requirement order."
+    },
+    {
+      "id": "pair-android-partial",
+      "jobDescriptionId": "jd-android-engineer",
+      "resumeSkills": ["KOTLIN"],
+      "expectedMatchedSkills": ["Kotlin"],
+      "expectedMissingSkills": ["Java", "SQL"],
+      "expectedScore": 33,
+      "reason": "Kotlin is the only one of three Android requirements represented in the resume."
+    },
+    {
+      "id": "pair-kotlin-perfect",
+      "jobDescriptionId": "jd-kotlin-developer",
+      "resumeSkills": ["java", "kotlin", "JAVA"],
+      "expectedMatchedSkills": ["Kotlin", "Java"],
+      "expectedMissingSkills": [],
+      "expectedScore": 100,
+      "reason": "Both requirements match and the repeated Java spelling does not create duplicate evidence."
+    },
+    {
+      "id": "pair-ios-partial",
+      "jobDescriptionId": "jd-ios-engineer",
+      "resumeSkills": ["Swift"],
+      "expectedMatchedSkills": ["Swift"],
+      "expectedMissingSkills": ["SwiftUI"],
+      "expectedScore": 50,
+      "reason": "The resume contains one of the two distinct iOS skills."
+    },
+    {
+      "id": "pair-ui-ux-partial",
+      "jobDescriptionId": "jd-ui-ux-designer",
+      "resumeSkills": ["figma", "CSS"],
+      "expectedMatchedSkills": ["Figma", "CSS"],
+      "expectedMissingSkills": ["Adobe XD"],
+      "expectedScore": 67,
+      "reason": "Two of three design requirements are present after canonicalization."
+    },
+    {
+      "id": "pair-data-scientist-empty-resume",
+      "jobDescriptionId": "jd-data-scientist",
+      "resumeSkills": [],
+      "expectedMatchedSkills": [],
+      "expectedMissingSkills": ["Python", "Pandas", "NumPy", "TensorFlow", "scikit-learn"],
+      "expectedScore": 0,
+      "reason": "An empty resume skill list cannot match any of the five recognized JD skills."
+    },
+    {
+      "id": "pair-product-designer-partial",
+      "jobDescriptionId": "jd-product-designer",
+      "resumeSkills": ["HTML", "Figma"],
+      "expectedMatchedSkills": ["Figma", "HTML"],
+      "expectedMissingSkills": ["Adobe XD"],
+      "expectedScore": 67,
+      "reason": "Figma and HTML cover two of the three product design requirements."
+    },
+    {
+      "id": "pair-full-stack-mixed-aliases",
+      "jobDescriptionId": "jd-full-stack-developer",
+      "resumeSkills": ["JS", "typescript", "React.js", "TS", "css"],
+      "expectedMatchedSkills": ["JavaScript", "TypeScript", "React", "CSS"],
+      "expectedMissingSkills": ["SQL"],
+      "expectedScore": 80,
+      "reason": "Mixed casing and duplicate TypeScript aliases normalize to four unique matches out of five."
+    }
+  ]
+}
