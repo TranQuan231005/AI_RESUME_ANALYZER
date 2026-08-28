@@ -102,4 +102,23 @@ class AuthIntegrationTest {
             .andExpect(jsonPath("$.code").value("UNAUTHORIZED"))
             .andExpect(jsonPath("$.message").value("Authentication is required to access this resource."));
     }
+
+    @Test
+    void userTokenCannotAccessAdminApi() throws Exception {
+        MvcResult login = mockMvc.perform(post("/api/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"email":"user@example.test","password":"User@123456"}
+                    """))
+            .andExpect(status().isOk())
+            .andReturn();
+        String token = objectMapper.readTree(login.getResponse().getContentAsString())
+            .path("accessToken")
+            .asText();
+
+        mockMvc.perform(get("/api/admin/system").header("Authorization", "Bearer " + token))
+            .andExpect(status().isForbidden())
+            .andExpect(jsonPath("$.code").value("FORBIDDEN"))
+            .andExpect(jsonPath("$.accessToken").doesNotExist());
+    }
 }
