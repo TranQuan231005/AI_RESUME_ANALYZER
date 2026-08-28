@@ -16,6 +16,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 class UserSeederTest {
     @Test
+    @SuppressWarnings("unchecked")
     void repeatedRunsKeepExistingAccountsAndCreateEachMissingAccountOnce() {
         UserRepository repository = mock(UserRepository.class);
         PasswordEncoder encoder = mock(PasswordEncoder.class);
