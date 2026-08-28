@@ -1,5 +1,5 @@
 import React from 'react';
-import { render } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { describe, test, expect } from '@jest/globals';
 import { ResumeResult } from './ResumeResult';
 
@@ -17,7 +17,7 @@ describe('ResumeResult Component', () => {
   };
 
   test('renders loading state', () => {
-    const { getByTestId } = render(
+    render(
       <ResumeResult
         loading={true}
         error={null}
@@ -27,11 +27,11 @@ describe('ResumeResult Component', () => {
         recommendedSkills={[]}
       />
     );
-    expect(getByTestId('loading-state')).toBeTruthy();
+    expect(screen.getByTestId('loading-state')).toBeTruthy();
   });
 
   test('renders error state', () => {
-    const { getByTestId } = render(
+    render(
       <ResumeResult
         loading={false}
         error="Failed to process"
@@ -41,11 +41,25 @@ describe('ResumeResult Component', () => {
         recommendedSkills={[]}
       />
     );
-    expect(getByTestId('error-state')).toBeTruthy();
+    expect(screen.getByTestId('error-state')).toBeTruthy();
+  });
+
+  test('returns null when scoreBreakdown is null', () => {
+    const { container } = render(
+      <ResumeResult
+        loading={false}
+        error={null}
+        scoreBreakdown={null}
+        evidence={[]}
+        recommendations={[]}
+        recommendedSkills={[]}
+      />
+    );
+    expect(container.firstChild).toBeNull();
   });
 
   test('renders score breakdown and fallback badge', () => {
-    const { getByTestId, getByText } = render(
+    render(
       <ResumeResult
         loading={false}
         error={null}
@@ -56,7 +70,42 @@ describe('ResumeResult Component', () => {
         recommendedSkills={['Docker']}
       />
     );
-    expect(getByTestId('fallback-badge')).toBeTruthy();
-    expect(getByText('Overall Score: 71/100')).toBeTruthy();
+    expect(screen.getByTestId('fallback-badge')).toBeTruthy();
+    expect(screen.getByText('Overall Score: 71/100')).toBeTruthy();
+    expect(screen.getByTestId('score-breakdown')).toBeTruthy();
+    expect(screen.getByTestId('evidence-section')).toBeTruthy();
+    expect(screen.getByTestId('recommended-skills')).toBeTruthy();
+    expect(screen.getByTestId('recommendations')).toBeTruthy();
+  });
+
+  test('does not render fallback badge when isFallback is false', () => {
+    render(
+      <ResumeResult
+        loading={false}
+        error={null}
+        isFallback={false}
+        scoreBreakdown={sampleScore}
+        evidence={[]}
+        recommendations={[]}
+        recommendedSkills={[]}
+      />
+    );
+    expect(screen.queryByTestId('fallback-badge')).toBeNull();
+  });
+
+  test('does not render empty section containers', () => {
+    render(
+      <ResumeResult
+        loading={false}
+        error={null}
+        scoreBreakdown={sampleScore}
+        evidence={[]}
+        recommendations={[]}
+        recommendedSkills={[]}
+      />
+    );
+    expect(screen.queryByTestId('evidence-section')).toBeNull();
+    expect(screen.queryByTestId('recommended-skills')).toBeNull();
+    expect(screen.queryByTestId('recommendations')).toBeNull();
   });
 });
