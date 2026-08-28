@@ -6,7 +6,8 @@
   "type": "commonjs",
   "scripts": {
     "build": "tsc",
-    "test": "jest"
+    "test": "jest",
+    "lint": "tsc --noEmit"
   },
   "keywords": [],
   "author": "",
