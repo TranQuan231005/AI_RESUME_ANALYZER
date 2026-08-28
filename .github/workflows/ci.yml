@@ -49,12 +49,8 @@ jobs:
           distribution: "temurin"
 
       - name: Run Backend Tests
-        run: |
-          if [ -f "backend/pom.xml" ]; then
-            cd backend && ./mvnw test -B
-          else
-            echo "backend/pom.xml not found yet, skipping backend build."
-          fi
+        working-directory: backend
+        run: ./gradlew test --no-daemon
 
   frontend-check:
     name: Frontend Lint & Test
@@ -68,10 +64,18 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Run Frontend Lint and Tests
-        run: |
-          if [ -f "frontend/package.json" ]; then
-            cd frontend && npm ci && npm test --if-present
-          else
-            echo "frontend/package.json not found yet, skipping frontend build."
-          fi
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Run frontend type check
+        working-directory: frontend
+        run: npm run lint
+
+      - name: Run frontend tests
+        working-directory: frontend
+        run: npm test -- --runInBand
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
