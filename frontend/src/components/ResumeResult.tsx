@@ -1,59 +1,50 @@
 import React from 'react';
-
-interface ScoreBreakdown {
-  contact: number;
-  summary: number;
-  skills: number;
-  education: number;
-  experience: number;
-  projects: number;
-  achievementsCertifications: number;
-  quantifiedImpact: number;
-  total: number;
-}
+import type { ResumeAnalysisResult } from '../types/analysis';
 
 interface ResumeResultProps {
   loading: boolean;
   error: string | null;
-  isFallback?: boolean;
-  scoreBreakdown: ScoreBreakdown | null;
-  evidence: string[];
-  recommendations: string[];
-  recommendedSkills: string[];
+  result: ResumeAnalysisResult | null;
 }
 
 export const ResumeResult: React.FC<ResumeResultProps> = ({
   loading,
   error,
-  isFallback = false,
-  scoreBreakdown,
-  evidence,
-  recommendations,
-  recommendedSkills,
+  result,
 }) => {
   if (loading) {
-    return <div data-testid="loading-state">Analyzing Resume...</div>;
+    return <p role="status" data-testid="loading-state">Analyzing Resume...</p>;
   }
 
   if (error) {
-    return <div data-testid="error-state">Error: {error}</div>;
+    return <p role="alert" data-testid="error-state">Error: {error}</p>;
   }
 
-  if (!scoreBreakdown) {
+  if (!result) {
     return null;
   }
 
+  const { ai, fieldEvidence, recommendations, recommendedSkills, scoreBreakdown } = result;
+
   return (
-    <div data-testid="resume-result">
-      {isFallback && (
-        <span data-testid="fallback-badge" className="badge-warning">
+    <article data-testid="resume-result">
+      {ai.usedFallback && (
+        <strong data-testid="fallback-badge">
           Fallback Mode
-        </span>
+        </strong>
       )}
 
-      <h2>Overall Score: {scoreBreakdown.total}/100</h2>
+      <header>
+        <h2>{result.fileName}</h2>
+        <p>{result.candidateName ?? 'Candidate name unavailable'}</p>
+        <p>Predicted field: {result.predictedField}</p>
+      </header>
 
-      <div data-testid="score-breakdown">
+      <h3>Overall Score: {result.resumeScore}/100</h3>
+      <progress aria-label="Overall resume score" value={result.resumeScore} max={100} />
+
+      <section data-testid="score-breakdown" aria-labelledby="score-breakdown-heading">
+        <h3 id="score-breakdown-heading">Score breakdown</h3>
         <div>Contact: {scoreBreakdown.contact}/5</div>
         <div>Summary: {scoreBreakdown.summary}/10</div>
         <div>Skills: {scoreBreakdown.skills}/15</div>
@@ -62,40 +53,42 @@ export const ResumeResult: React.FC<ResumeResultProps> = ({
         <div>Projects: {scoreBreakdown.projects}/15</div>
         <div>Achievements: {scoreBreakdown.achievementsCertifications}/10</div>
         <div>Impact: {scoreBreakdown.quantifiedImpact}/15</div>
-      </div>
+      </section>
 
-      {evidence.length > 0 && (
-        <div data-testid="evidence-section">
+      {fieldEvidence.length > 0 && (
+        <section data-testid="evidence-section">
           <h3>Evidence</h3>
           <ul>
-            {evidence.map((item, idx) => (
-              <li key={idx}>{item}</li>
+            {fieldEvidence.map((item, index) => (
+              <li key={`${item.field}-${index}`}>
+                {item.field}: {item.matchedSkills.join(', ')} ({Math.round(item.confidence * 100)}%)
+              </li>
             ))}
           </ul>
-        </div>
+        </section>
       )}
 
       {recommendedSkills.length > 0 && (
-        <div data-testid="recommended-skills">
+        <section data-testid="recommended-skills">
           <h3>Recommended Skills</h3>
           <ul>
             {recommendedSkills.map((skill, idx) => (
               <li key={idx}>{skill}</li>
             ))}
           </ul>
-        </div>
+        </section>
       )}
 
       {recommendations.length > 0 && (
-        <div data-testid="recommendations">
+        <section data-testid="recommendations">
           <h3>Recommendations</h3>
           <ul>
             {recommendations.map((rec, idx) => (
               <li key={idx}>{rec}</li>
             ))}
           </ul>
-        </div>
+        </section>
       )}
-    </div>
+    </article>
   );
 };
