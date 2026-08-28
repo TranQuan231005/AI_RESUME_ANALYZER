@@ -1,5 +1,6 @@
 package com.resumeanalyzer.analysis;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.resumeanalyzer.user.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -8,10 +9,11 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.Instant;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "analysis_results")
@@ -48,9 +50,9 @@ public class AnalysisResult {
     @Column(name = "target_role")
     private String targetRole;
 
-    @Lob
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "result_json", nullable = false, columnDefinition = "json")
-    private String resultJson;
+    private JsonNode resultJson;
 
     @Column(name = "ai_provider", nullable = false)
     private String aiProvider;
@@ -86,8 +88,8 @@ public class AnalysisResult {
     public void setMatchScore(Integer matchScore) { this.matchScore = matchScore; }
     public String getTargetRole() { return targetRole; }
     public void setTargetRole(String targetRole) { this.targetRole = targetRole; }
-    public String getResultJson() { return resultJson; }
-    public void setResultJson(String resultJson) { this.resultJson = resultJson; }
+    public JsonNode getResultJson() { return resultJson; }
+    public void setResultJson(JsonNode resultJson) { this.resultJson = resultJson; }
     public String getAiProvider() { return aiProvider; }
     public void setAiProvider(String aiProvider) { this.aiProvider = aiProvider; }
     public String getAiModel() { return aiModel; }
