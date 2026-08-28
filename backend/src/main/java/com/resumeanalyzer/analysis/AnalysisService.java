@@ -13,6 +13,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class AnalysisService {
@@ -30,6 +31,7 @@ public class AnalysisService {
         this.objectMapper = objectMapper;
     }
 
+    @Transactional
     public AnalysisResult saveResult(Long userId, AnalysisResult result) {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
@@ -38,7 +40,11 @@ public class AnalysisService {
     }
 
     public PagedAnalysisSummary getHistory(Long userId, int page, int size, String type) {
-        PageRequest pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        PageRequest pageable = PageRequest.of(
+            page,
+            size,
+            Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id"))
+        );
         Page<AnalysisResult> results = type == null || type.isBlank()
             ? repository.findByUserId(userId, pageable)
             : repository.findByUserIdAndAnalysisType(userId, type, pageable);
