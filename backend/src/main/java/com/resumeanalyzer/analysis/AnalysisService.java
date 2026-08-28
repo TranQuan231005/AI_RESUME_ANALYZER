@@ -1,6 +1,5 @@
 package com.resumeanalyzer.analysis;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.resumeanalyzer.analysis.dto.AnalysisDetailResponse;
@@ -8,7 +7,6 @@ import com.resumeanalyzer.analysis.dto.AnalysisSummaryDto;
 import com.resumeanalyzer.analysis.dto.PagedAnalysisSummary;
 import com.resumeanalyzer.user.User;
 import com.resumeanalyzer.user.UserRepository;
-import java.util.Map;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -53,8 +51,13 @@ public class AnalysisService {
     }
 
     public AnalysisDetailResponse getDetail(Long userId, Long id) {
-        AnalysisResult result = repository.findByIdAndUserId(id, userId)
-            .orElseThrow(() -> new AnalysisNotFoundException(id));
+        AnalysisResult result = repository.findByIdAndUserId(id, userId).orElse(null);
+        if (result == null) {
+            if (repository.existsById(id)) {
+                throw new AnalysisForbiddenException();
+            }
+            throw new AnalysisNotFoundException(id);
+        }
         return new AnalysisDetailResponse(
             result.getId(),
             result.getAnalysisType(),
@@ -80,11 +83,10 @@ public class AnalysisService {
         );
     }
 
-    private JsonNode parseJson(String json) {
-        try {
-            return objectMapper.readTree(json);
-        } catch (JsonProcessingException ex) {
-            return objectMapper.valueToTree(Map.of("raw", json));
+    private JsonNode parseJson(JsonNode json) {
+        if (json != null && json.isObject()) {
+            return json;
         }
+        return objectMapper.createObjectNode().put("unavailable", true);
     }
 }
