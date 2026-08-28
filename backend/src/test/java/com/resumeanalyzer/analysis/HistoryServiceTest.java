@@ -59,7 +59,7 @@ class HistoryServiceTest {
         PageRequest expectedPage = PageRequest.of(
             0,
             10,
-            Sort.by(Sort.Direction.DESC, "createdAt")
+            Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id"))
         );
         when(repository.findByUserId(7L, expectedPage))
             .thenReturn(new PageImpl<>(List.of(analysis), expectedPage, 1));
@@ -90,7 +90,7 @@ class HistoryServiceTest {
         PageRequest pageable = PageRequest.of(
             1,
             5,
-            Sort.by(Sort.Direction.DESC, "createdAt")
+            Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id"))
         );
         when(repository.findByUserIdAndAnalysisType(7L, "MATCH", pageable))
             .thenReturn(new PageImpl<>(List.of(), pageable, 0));
