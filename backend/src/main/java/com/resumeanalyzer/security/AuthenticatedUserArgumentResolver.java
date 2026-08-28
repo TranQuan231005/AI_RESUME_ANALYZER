@@ -4,7 +4,9 @@ import org.springframework.core.MethodParameter;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.support.WebDataBinderFactory;
 import org.springframework.web.context.request.NativeWebRequest;
-import org.springframework.web.context.request.RequestAttributes;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
 
@@ -22,12 +24,13 @@ public class AuthenticatedUserArgumentResolver implements HandlerMethodArgumentR
         NativeWebRequest webRequest,
         WebDataBinderFactory binderFactory
     ) {
-        Object identity = webRequest.getAttribute(
-            AuthenticatedUser.REQUEST_ATTRIBUTE,
-            RequestAttributes.SCOPE_REQUEST
-        );
-        if (identity instanceof AuthenticatedUser authenticatedUser) {
-            return authenticatedUser;
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication instanceof JwtAuthenticationToken jwtAuthentication && authentication.isAuthenticated()) {
+            try {
+                return new AuthenticatedUser(Long.parseLong(jwtAuthentication.getToken().getSubject()));
+            } catch (IllegalArgumentException exception) {
+                throw new UnauthenticatedException();
+            }
         }
         throw new UnauthenticatedException();
     }
