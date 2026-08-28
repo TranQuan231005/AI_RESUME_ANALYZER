@@ -30,24 +30,5 @@
     "jest-environment-jsdom": "^30.4.1",
     "ts-jest": "^29.4.12",
     "typescript": "^5.9.3"
-  "private": true,
-  "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-router-dom": "^7.18.2"
-  },
-  "devDependencies": {
-    "@babel/core": "^7.24.0",
-    "@babel/preset-env": "^7.24.0",
-    "@babel/preset-react": "^7.24.0",
-    "@babel/preset-typescript": "^7.24.0",
-    "jest": "^29.7.0",
-    "jest-environment-jsdom": "^30.5.0",
-    "typescript": "^5.3.3"
-  },
-  "scripts": {
-    "start": "parcel index.html",
-    "build": "parcel build index.html",
-    "test": "jest"
   }
 }
