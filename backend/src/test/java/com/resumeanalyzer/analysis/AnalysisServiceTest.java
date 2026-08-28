@@ -3,10 +3,13 @@ package com.resumeanalyzer.analysis;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.TextNode;
 import com.resumeanalyzer.analysis.dto.AnalysisDetailResponse;
 import com.resumeanalyzer.analysis.dto.PagedAnalysisSummary;
 import com.resumeanalyzer.user.User;
@@ -63,7 +66,11 @@ class AnalysisServiceTest {
         PagedAnalysisSummary history = service.getHistory(7L, 2, 5, "MATCH");
 
         ArgumentCaptor<PageRequest> pageable = ArgumentCaptor.forClass(PageRequest.class);
-        verify(repository).findByUserIdAndAnalysisType(7L, "MATCH", pageable.capture());
+        verify(repository).findByUserIdAndAnalysisType(
+            eq(7L),
+            eq("MATCH"),
+            pageable.capture()
+        );
         assertThat(pageable.getValue()).isEqualTo(
             PageRequest.of(2, 5, Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id")))
         );
@@ -89,27 +96,28 @@ class AnalysisServiceTest {
     @Test
     void getDetailHidesRecordOwnedByAnotherUser() {
         when(repository.findByIdAndUserId(11L, 7L)).thenReturn(Optional.empty());
+        when(repository.existsById(11L)).thenReturn(true);
 
         assertThatThrownBy(() -> service.getDetail(7L, 11L))
-            .isInstanceOf(AnalysisNotFoundException.class);
+            .isInstanceOf(AnalysisForbiddenException.class);
     }
 
     @Test
     void getDetailReturnsMalformedStoredJsonAsSafeRawValue() {
         AnalysisResult result = result("RESUME");
-        result.setResultJson("not-json");
+        result.setResultJson(TextNode.valueOf("not-json"));
         when(repository.findByIdAndUserId(11L, 7L)).thenReturn(Optional.of(result));
 
         AnalysisDetailResponse detail = service.getDetail(7L, 11L);
 
-        assertThat(detail.resultJson().get("raw").asText()).isEqualTo("not-json");
+        assertThat(detail.resultJson().get("unavailable").asBoolean()).isTrue();
     }
 
     private AnalysisResult result(String type) {
         AnalysisResult result = new AnalysisResult();
         result.setAnalysisType(type);
         result.setFileName("cv.pdf");
-        result.setResultJson("{\"score\":91}");
+        result.setResultJson(JsonNodeFactory.instance.objectNode().put("score", 91));
         result.setAiProvider("RULE_BASED");
         result.setAiModel("deterministic-v1");
         result.setProcessingMs(10);
