@@ -12,7 +12,6 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-feat/T3-resume-result-hardening
   "dependencies": {
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
@@ -20,19 +19,6 @@ feat/T3-resume-result-hardening
   },
   "devDependencies": {
     "@jest/globals": "^30.4.1",
-  "type": "commonjs",
-  "devDependencies": {
-feat/T3-resume-result-hardening
-    "@babel/preset-env": "^8.0.2",
-    "@babel/preset-react": "^8.0.1",
-    "@babel/preset-typescript": "^8.0.1",
-develop
-    "@babel/core": "^7.29.7",
-    "@babel/preset-env": "^7.29.7",
-    "@babel/preset-react": "^7.29.7",
-    "@babel/preset-typescript": "^7.29.7",
-    "@jest/globals": "^30.4.1",
-develop
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.2",
@@ -44,10 +30,5 @@ develop
     "jest-environment-jsdom": "^30.4.1",
     "ts-jest": "^29.4.12",
     "typescript": "^5.9.3"
-  },
-  "dependencies": {
-    "react": "^19.2.8",
-    "react-dom": "^19.2.8",
-    "react-router-dom": "^7.18.2"
   }
 }
