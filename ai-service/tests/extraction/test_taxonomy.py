@@ -15,3 +15,7 @@ def test_taxonomy_has_unique_canonical_names_and_aliases():
 
 def test_skill_matching_is_unique_and_respects_boundaries():
     assert find_skills("Python, python and ReactJS. Not JavaScripted.") == ["Python", "React"]
+
+
+def test_long_alias_does_not_emit_an_overlapping_short_alias():
+    assert find_skills("React.js with TypeScript") == ["React", "TypeScript"]

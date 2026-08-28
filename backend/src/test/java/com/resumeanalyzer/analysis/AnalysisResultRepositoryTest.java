@@ -2,8 +2,10 @@ package com.resumeanalyzer.analysis;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.resumeanalyzer.user.User;
 import com.resumeanalyzer.user.UserRepository;
+import jakarta.persistence.EntityManager;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,31 +22,40 @@ class AnalysisResultRepositoryTest {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private EntityManager entityManager;
+
     @Test
     void savesAllImportantFieldsAndReadsStoredJson() {
-        User user = user("owner@example.com");
+        User user = user("owner@example.test");
         AnalysisResult result = result(user, "RESUME", "cv.pdf");
         result.setCandidateName("Alex Nguyen");
-        result.setCandidateEmail("alex@example.com");
+        result.setCandidateEmail("alex@example.test");
         result.setPredictedField("TECHNOLOGY");
         result.setResumeScore(91);
         result.setAiProvider("RULE_BASED");
         result.setAiModel("deterministic-v1");
         result.setUsedFallback(true);
         result.setProcessingMs(740);
-        result.setResultJson("{\"score\":91,\"skills\":[\"Java\"]}");
+        result.setResultJson(
+            JsonNodeFactory.instance.objectNode()
+                .put("score", 91)
+                .set("skills", JsonNodeFactory.instance.arrayNode().add("Java"))
+        );
 
         AnalysisResult saved = repository.saveAndFlush(result);
-        AnalysisResult loaded = repository.findById(saved.getId()).orElseThrow();
+        Long savedId = saved.getId();
+        entityManager.clear();
+        AnalysisResult loaded = repository.findById(savedId).orElseThrow();
 
         assertThat(loaded.getUser().getId()).isEqualTo(user.getId());
         assertThat(loaded.getAnalysisType()).isEqualTo("RESUME");
         assertThat(loaded.getFileName()).isEqualTo("cv.pdf");
         assertThat(loaded.getCandidateName()).isEqualTo("Alex Nguyen");
-        assertThat(loaded.getCandidateEmail()).isEqualTo("alex@example.com");
+        assertThat(loaded.getCandidateEmail()).isEqualTo("alex@example.test");
         assertThat(loaded.getPredictedField()).isEqualTo("TECHNOLOGY");
         assertThat(loaded.getResumeScore()).isEqualTo(91);
-        assertThat(loaded.getResultJson()).contains("Java");
+        assertThat(loaded.getResultJson().get("skills").get(0).asText()).isEqualTo("Java");
         assertThat(loaded.getAiProvider()).isEqualTo("RULE_BASED");
         assertThat(loaded.getAiModel()).isEqualTo("deterministic-v1");
         assertThat(loaded.isUsedFallback()).isTrue();
@@ -54,8 +65,8 @@ class AnalysisResultRepositoryTest {
 
     @Test
     void filtersByOwnerAndAnalysisTypeWithDefaultPagination() {
-        User owner = user("owner@example.com");
-        User other = user("other@example.com");
+        User owner = user("owner@example.test");
+        User other = user("other@example.test");
         repository.saveAllAndFlush(List.of(
             result(owner, "RESUME", "resume-1.pdf"),
             result(owner, "MATCH", "resume-2.pdf"),
@@ -77,8 +88,8 @@ class AnalysisResultRepositoryTest {
 
     @Test
     void returnsOnlyOwnerRecordsInDescendingCreationOrder() {
-        User owner = user("owner@example.com");
-        User other = user("other@example.com");
+        User owner = user("owner@example.test");
+        User other = user("other@example.test");
         AnalysisResult first = repository.saveAndFlush(result(owner, "RESUME", "older.pdf"));
         AnalysisResult second = repository.saveAndFlush(result(owner, "MATCH", "newer.pdf"));
         repository.saveAndFlush(result(other, "RESUME", "private.pdf"));
@@ -96,8 +107,8 @@ class AnalysisResultRepositoryTest {
 
     @Test
     void detailLookupCannotCrossOwnerBoundary() {
-        User owner = user("owner@example.com");
-        User other = user("other@example.com");
+        User owner = user("owner@example.test");
+        User other = user("other@example.test");
         AnalysisResult result = repository.saveAndFlush(result(owner, "RESUME", "private.pdf"));
 
         assertThat(repository.findByIdAndUserId(result.getId(), owner.getId())).isPresent();
@@ -118,7 +129,7 @@ class AnalysisResultRepositoryTest {
         result.setUser(user);
         result.setAnalysisType(type);
         result.setFileName(fileName);
-        result.setResultJson("{\"ok\":true}");
+        result.setResultJson(JsonNodeFactory.instance.objectNode().put("ok", true));
         result.setAiProvider("RULE_BASED");
         result.setAiModel("deterministic-v1");
         result.setProcessingMs(10);

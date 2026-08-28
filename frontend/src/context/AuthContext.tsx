@@ -1,53 +1,37 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useState, useContext } from 'react';
 
-type Role = 'USER' | 'ADMIN';
-
-export interface User {
-  email: string;
-  role: Role;
-}
-
-interface AuthContextType {
-  user: User | null;
+export type AuthContextType = {
   token: string | null;
-  login: (token: string, user: User) => void;
+  role?: string | null;
+  login: (token: string) => void;
   logout: () => void;
-}
+};
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(() => {
-    const savedUser = sessionStorage.getItem('user');
-    return savedUser ? JSON.parse(savedUser) : null;
-  });
+  const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
+  const [role] = useState<string | null>(localStorage.getItem('role'));
 
-  const [token, setToken] = useState<string | null>(() => {
-    return sessionStorage.getItem('token');
-  });
-
-  const login = (newToken: string, newUser: User) => {
+  const login = (newToken: string) => {
+    localStorage.setItem('token', newToken);
     setToken(newToken);
-    setUser(newUser);
-    sessionStorage.setItem('token', newToken);
-    sessionStorage.setItem('user', JSON.stringify(newUser));
   };
 
   const logout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('role');
     setToken(null);
-    setUser(null);
-    sessionStorage.removeItem('token');
-    sessionStorage.removeItem('user');
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout }}>
+    <AuthContext.Provider value={{ token, role, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-export const useAuth = () => {
+export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');

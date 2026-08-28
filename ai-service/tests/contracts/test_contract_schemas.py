@@ -194,3 +194,32 @@ def test_parsed_document_rejects_zero_page_or_oversize():
 def test_match_request_rejects_short_job_description():
     with pytest.raises(ValidationError):
         MatchAnalysisRequest(job_description="Too short")
+
+
+def test_match_request_accepts_and_serializes_frozen_public_field_names():
+    request = MatchAnalysisRequest.model_validate(
+        {
+            "jobDescription": "Data Analyst role requiring Python, SQL, and stakeholder reporting skills.",
+            "targetRole": "Data Analyst",
+        }
+    )
+
+    assert request.job_description.startswith("Data Analyst")
+    assert request.target_role == "Data Analyst"
+    assert request.model_dump(by_alias=True) == {
+        "jobDescription": request.job_description,
+        "targetRole": "Data Analyst",
+    }
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {},
+        {"jobDescription": "Too short"},
+        {"jobDescription": None},
+    ],
+)
+def test_match_request_rejects_invalid_public_payloads(payload):
+    with pytest.raises(ValidationError):
+        MatchAnalysisRequest.model_validate(payload)
