@@ -4,12 +4,14 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.resumeanalyzer.analysis.dto.PagedAnalysisSummary;
-import com.resumeanalyzer.security.AuthenticatedUser;
 import com.resumeanalyzer.security.AuthenticatedUserArgumentResolver;
+import com.resumeanalyzer.security.SecurityConfiguration;
+import com.resumeanalyzer.security.SecurityErrorHandler;
 import com.resumeanalyzer.security.WebMvcConfiguration;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -21,7 +23,12 @@ import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(AnalysisController.class)
-@Import({AuthenticatedUserArgumentResolver.class, WebMvcConfiguration.class})
+@Import({
+    AuthenticatedUserArgumentResolver.class,
+    WebMvcConfiguration.class,
+    SecurityConfiguration.class,
+    SecurityErrorHandler.class
+})
 class HistoryControllerTest {
     @Autowired
     private MockMvc mockMvc;
@@ -36,7 +43,7 @@ class HistoryControllerTest {
 
         mockMvc.perform(
             get("/api/analyses")
-                .requestAttr(AuthenticatedUser.REQUEST_ATTRIBUTE, new AuthenticatedUser(7L))
+                .with(jwt().jwt(token -> token.subject("7").claim("role", "USER")))
         )
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.page").value(0))
@@ -58,7 +65,6 @@ class HistoryControllerTest {
 
     @Test
     void invalidPaginationAndTypeUseMalformedRequestContract() throws Exception {
-        AuthenticatedUser user = new AuthenticatedUser(7L);
         for (String path : List.of(
             "/api/analyses?page=-1",
             "/api/analyses?size=0",
@@ -66,7 +72,7 @@ class HistoryControllerTest {
             "/api/analyses?type=OTHER"
         )) {
             mockMvc.perform(
-                get(path).requestAttr(AuthenticatedUser.REQUEST_ATTRIBUTE, user)
+                get(path).with(jwt().jwt(token -> token.subject("7").claim("role", "USER")))
             )
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("MALFORMED_REQUEST"))
@@ -80,7 +86,7 @@ class HistoryControllerTest {
 
         mockMvc.perform(
             get("/api/analyses/31")
-                .requestAttr(AuthenticatedUser.REQUEST_ATTRIBUTE, new AuthenticatedUser(7L))
+                .with(jwt().jwt(token -> token.subject("7").claim("role", "USER")))
         )
             .andExpect(status().isForbidden())
             .andExpect(jsonPath("$.code").value("FORBIDDEN"))
@@ -96,7 +102,7 @@ class HistoryControllerTest {
 
         mockMvc.perform(
             get("/api/analyses/404")
-                .requestAttr(AuthenticatedUser.REQUEST_ATTRIBUTE, new AuthenticatedUser(7L))
+                .with(jwt().jwt(token -> token.subject("7").claim("role", "USER")))
         )
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$.code").value("NOT_FOUND"));
@@ -112,7 +118,7 @@ class HistoryControllerTest {
 
         mockMvc.perform(
             get("/api/analyses")
-                .requestAttr(AuthenticatedUser.REQUEST_ATTRIBUTE, new AuthenticatedUser(7L))
+                .with(jwt().jwt(token -> token.subject("7").claim("role", "USER")))
         )
             .andExpect(status().isInternalServerError())
             .andExpect(jsonPath("$.code").value("INTERNAL_ERROR"))
