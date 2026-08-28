@@ -41,6 +41,132 @@
         "quantifiedImpact": 0,
         "total": 0
       }
+    },
+    {
+      "name": "Fresh Graduate Resume",
+      "breakdown": {
+        "contact": 5,
+        "summary": 7,
+        "skills": 10,
+        "education": 10,
+        "experience": 5,
+        "projects": 12,
+        "achievementsCertifications": 3,
+        "quantifiedImpact": 4,
+        "total": 56
+      }
+    },
+    {
+      "name": "Senior Lead Resume",
+      "breakdown": {
+        "contact": 5,
+        "summary": 9,
+        "skills": 15,
+        "education": 8,
+        "experience": 20,
+        "projects": 14,
+        "achievementsCertifications": 8,
+        "quantifiedImpact": 14,
+        "total": 93
+      }
+    },
+    {
+      "name": "No Certifications or Impact",
+      "breakdown": {
+        "contact": 5,
+        "summary": 6,
+        "skills": 12,
+        "education": 8,
+        "experience": 14,
+        "projects": 10,
+        "achievementsCertifications": 0,
+        "quantifiedImpact": 0,
+        "total": 55
+      }
+    },
+    {
+      "name": "Low Skills Boundary",
+      "breakdown": {
+        "contact": 5,
+        "summary": 5,
+        "skills": 1,
+        "education": 5,
+        "experience": 10,
+        "projects": 5,
+        "achievementsCertifications": 2,
+        "quantifiedImpact": 2,
+        "total": 35
+      }
+    },
+    {
+      "name": "Minimal Technical Sections",
+      "breakdown": {
+        "contact": 5,
+        "summary": 10,
+        "skills": 2,
+        "education": 2,
+        "experience": 0,
+        "projects": 0,
+        "achievementsCertifications": 0,
+        "quantifiedImpact": 0,
+        "total": 19
+      }
+    },
+    {
+      "name": "Mid-Level Backend Developer",
+      "breakdown": {
+        "contact": 5,
+        "summary": 8,
+        "skills": 14,
+        "education": 8,
+        "experience": 16,
+        "projects": 12,
+        "achievementsCertifications": 6,
+        "quantifiedImpact": 10,
+        "total": 79
+      }
+    },
+    {
+      "name": "Project Heavy Resume",
+      "breakdown": {
+        "contact": 5,
+        "summary": 6,
+        "skills": 11,
+        "education": 7,
+        "experience": 8,
+        "projects": 15,
+        "achievementsCertifications": 5,
+        "quantifiedImpact": 9,
+        "total": 66
+      }
+    },
+    {
+      "name": "Near Perfect Upper Boundary",
+      "breakdown": {
+        "contact": 4,
+        "summary": 9,
+        "skills": 14,
+        "education": 9,
+        "experience": 19,
+        "projects": 14,
+        "achievementsCertifications": 9,
+        "quantifiedImpact": 14,
+        "total": 92
+      }
+    },
+    {
+      "name": "Near Zero Lower Boundary",
+      "breakdown": {
+        "contact": 1,
+        "summary": 1,
+        "skills": 1,
+        "education": 1,
+        "experience": 1,
+        "projects": 1,
+        "achievementsCertifications": 1,
+        "quantifiedImpact": 1,
+        "total": 8
+      }
     }
   ],
   "invalid_cases": [
@@ -71,6 +197,36 @@
         "achievementsCertifications": 5,
         "quantifiedImpact": 8,
         "total": 76
+      },
+      "error": "OUT_OF_BOUNDS"
+    },
+    {
+      "name": "Negative experience score",
+      "breakdown": {
+        "contact": 5,
+        "summary": 8,
+        "skills": 12,
+        "education": 8,
+        "experience": -5,
+        "projects": 10,
+        "achievementsCertifications": 5,
+        "quantifiedImpact": 8,
+        "total": 51
+      },
+      "error": "OUT_OF_BOUNDS"
+    },
+    {
+      "name": "Skills score exceeds maximum of 15",
+      "breakdown": {
+        "contact": 5,
+        "summary": 8,
+        "skills": 20,
+        "education": 8,
+        "experience": 15,
+        "projects": 10,
+        "achievementsCertifications": 5,
+        "quantifiedImpact": 8,
+        "total": 79
       },
       "error": "OUT_OF_BOUNDS"
     }
