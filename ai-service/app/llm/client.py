@@ -105,15 +105,15 @@ class OllamaClient:
                     timeout=remaining_seconds,
                 )
                 response.raise_for_status()
+            except (requests.ConnectTimeout, requests.ConnectionError) as exc:
+                raise OllamaClientError(
+                    OllamaErrorCode.CONNECTION,
+                    "Could not connect to Ollama",
+                ) from exc
             except requests.Timeout as exc:
                 raise OllamaClientError(
                     OllamaErrorCode.TIMEOUT,
                     "Ollama request timed out",
-                ) from exc
-            except requests.ConnectionError as exc:
-                raise OllamaClientError(
-                    OllamaErrorCode.CONNECTION,
-                    "Could not connect to Ollama",
                 ) from exc
             except requests.RequestException as exc:
                 raise OllamaClientError(

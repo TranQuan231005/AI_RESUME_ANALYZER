@@ -1,7 +1,7 @@
 package com.resumeanalyzer.common;
 
-import com.resumeanalyzer.analysis.AnalysisNotFoundException;
 import com.resumeanalyzer.analysis.AnalysisForbiddenException;
+import com.resumeanalyzer.analysis.AnalysisNotFoundException;
 import com.resumeanalyzer.security.UnauthenticatedException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
@@ -83,4 +83,5 @@ public class ApiExceptionHandler {
             UUID.randomUUID().toString()
         );
     }
+
 }
