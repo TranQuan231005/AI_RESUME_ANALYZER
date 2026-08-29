@@ -191,6 +191,21 @@
       },
       "ExtractResponse": {
         "properties": {
+          "candidateName": {
+            "type": "string",
+            "title": "Candidatename"
+          },
+          "candidateEmail": {
+            "type": "string",
+            "title": "Candidateemail"
+          },
+          "skills": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Skills"
+          },
           "predictedField": {
             "type": "string",
             "title": "Predictedfield"
@@ -205,6 +220,9 @@
         },
         "type": "object",
         "required": [
+          "candidateName",
+          "candidateEmail",
+          "skills",
           "predictedField",
           "fieldEvidence"
         ],
