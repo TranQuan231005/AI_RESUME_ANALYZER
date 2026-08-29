@@ -1,10 +1,49 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "FastAPI",
+    "title": "AI Service Contract API",
     "version": "0.1.0"
   },
   "paths": {
+    "/api/extract-features": {
+      "post": {
+        "tags": [
+          "Extraction"
+        ],
+        "summary": "Extract Features",
+        "operationId": "extract_features_api_extract_features_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExtractRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/analyze-match": {
       "post": {
         "tags": [
@@ -119,6 +158,34 @@
           "jobDescription"
         ],
         "title": "Body_analyze_match_api_analyze_match_post"
+      },
+      "ExtractRequest": {
+        "properties": {
+          "fileName": {
+            "type": "string",
+            "title": "Filename"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "pageCount": {
+            "type": "integer",
+            "title": "Pagecount"
+          },
+          "sizeBytes": {
+            "type": "integer",
+            "title": "Sizebytes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "fileName",
+          "text",
+          "pageCount",
+          "sizeBytes"
+        ],
+        "title": "ExtractRequest"
       },
       "HTTPValidationError": {
         "properties": {
