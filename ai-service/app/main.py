@@ -2,8 +2,12 @@ from typing import Annotated, Optional
 from fastapi import FastAPI, UploadFile, File, Form
 from app.schemas.matching import MatchResult
 from app.validation import validate_pdf_file
+from app.extraction.router import router as extraction_router
 
-app = FastAPI()
+app = FastAPI(title="AI Service Contract API")
+
+# Đăng ký router trích xuất để giải quyết lỗi 404 cho /api/extract-features
+app.include_router(extraction_router, prefix="/api")
 
 @app.post(
     "/api/analyze-match",
@@ -33,8 +37,6 @@ async def analyze_match(
     ] = None,
 ) -> MatchResult:
     """Match resume features against job description skills and ATS criteria."""
-    # Kiểm tra tính hợp lệ của file PDF trước khi match
     await validate_pdf_file(file)
     
-    # Stubs for D2 - actual pipeline implementation is in later tasks
     raise NotImplementedError("Pipeline implementation will be integrated in D7-D8")
