@@ -27,7 +27,9 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/ExtractResponse"
+                }
               }
             }
           },
@@ -186,6 +188,53 @@
           "sizeBytes"
         ],
         "title": "ExtractRequest"
+      },
+      "ExtractResponse": {
+        "properties": {
+          "predictedField": {
+            "type": "string",
+            "title": "Predictedfield"
+          },
+          "fieldEvidence": {
+            "items": {
+              "$ref": "#/components/schemas/FieldEvidence"
+            },
+            "type": "array",
+            "title": "Fieldevidence"
+          }
+        },
+        "type": "object",
+        "required": [
+          "predictedField",
+          "fieldEvidence"
+        ],
+        "title": "ExtractResponse"
+      },
+      "FieldEvidence": {
+        "properties": {
+          "field": {
+            "type": "string",
+            "title": "Field"
+          },
+          "matchedSkills": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Matchedskills"
+          },
+          "confidence": {
+            "type": "number",
+            "title": "Confidence"
+          }
+        },
+        "type": "object",
+        "required": [
+          "field",
+          "matchedSkills",
+          "confidence"
+        ],
+        "title": "FieldEvidence"
       },
       "HTTPValidationError": {
         "properties": {

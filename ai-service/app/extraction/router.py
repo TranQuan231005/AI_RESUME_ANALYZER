@@ -1,7 +1,23 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from pydantic import BaseModel, Field
+from typing import List, Optional
 
 router = APIRouter(tags=["Extraction"])
+
+class FieldEvidence(BaseModel):
+    field: str
+    matched_skills: List[str] = Field(alias="matchedSkills")
+    confidence: float
+
+    class Config:
+        populate_by_name = True
+
+class ExtractResponse(BaseModel):
+    predicted_field: str = Field(alias="predictedField")
+    field_evidence: List[FieldEvidence] = Field(alias="fieldEvidence")
+
+    class Config:
+        populate_by_name = True
 
 class ExtractRequest(BaseModel):
     file_name: str = Field(alias="fileName")
@@ -12,7 +28,20 @@ class ExtractRequest(BaseModel):
     class Config:
         populate_by_name = True
 
-@router.post("/extract-features")
+@router.post("/extract-features", response_model=ExtractResponse)
 async def extract_features(payload: ExtractRequest):
-    # Stub cho D2 - pipeline xử lý thực tế sẽ tích hợp sau
-    return {"status": "success"}
+    return {
+        "predictedField": "Data Science",
+        "fieldEvidence": [
+            {
+                "field": "Data Science",
+                "matchedSkills": ["Python", "scikit-learn", "SQL"],
+                "confidence": 1.0
+            },
+            {
+                "field": "Web Development",
+                "matchedSkills": ["SQL"],
+                "confidence": 0.33
+            }
+        ]
+    }
