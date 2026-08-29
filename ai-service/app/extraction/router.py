@@ -1,37 +1,46 @@
 from fastapi import APIRouter
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List
 
 router = APIRouter(tags=["Extraction"])
 
 class FieldEvidence(BaseModel):
     field: str
-    matched_skills: List[str]
+    matched_skills: List[str] = Field(alias="matchedSkills")
     confidence: float
 
+    class Config:
+        populate_by_name = True
+
 class ExtractResponse(BaseModel):
-    predicted_field: str
-    field_evidence: List[FieldEvidence]
+    predicted_field: str = Field(alias="predictedField")
+    field_evidence: List[FieldEvidence] = Field(alias="fieldEvidence")
+
+    class Config:
+        populate_by_name = True
 
 class ExtractRequest(BaseModel):
-    file_name: str
+    file_name: str = Field(alias="fileName")
     text: str
-    page_count: int
-    size_bytes: int
+    page_count: int = Field(alias="pageCount")
+    size_bytes: int = Field(alias="sizeBytes")
+
+    class Config:
+        populate_by_name = True
 
 @router.post("/extract-features", response_model=ExtractResponse)
 async def extract_features(payload: ExtractRequest):
     return {
-        "predicted_field": "Data Science",
-        "field_evidence": [
+        "predictedField": "Data Science",
+        "fieldEvidence": [
             {
                 "field": "Data Science",
-                "matched_skills": ["Python", "scikit-learn", "SQL"],
+                "matchedSkills": ["Python", "scikit-learn", "SQL"],
                 "confidence": 1.0
             },
             {
                 "field": "Web Development",
-                "matched_skills": ["SQL"],
+                "matchedSkills": ["SQL"],
                 "confidence": 0.33
             }
         ]

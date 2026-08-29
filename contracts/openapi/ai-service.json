@@ -163,50 +163,50 @@
       },
       "ExtractRequest": {
         "properties": {
-          "file_name": {
+          "fileName": {
             "type": "string",
-            "title": "File Name"
+            "title": "Filename"
           },
           "text": {
             "type": "string",
             "title": "Text"
           },
-          "page_count": {
+          "pageCount": {
             "type": "integer",
-            "title": "Page Count"
+            "title": "Pagecount"
           },
-          "size_bytes": {
+          "sizeBytes": {
             "type": "integer",
-            "title": "Size Bytes"
+            "title": "Sizebytes"
           }
         },
         "type": "object",
         "required": [
-          "file_name",
+          "fileName",
           "text",
-          "page_count",
-          "size_bytes"
+          "pageCount",
+          "sizeBytes"
         ],
         "title": "ExtractRequest"
       },
       "ExtractResponse": {
         "properties": {
-          "predicted_field": {
+          "predictedField": {
             "type": "string",
-            "title": "Predicted Field"
+            "title": "Predictedfield"
           },
-          "field_evidence": {
+          "fieldEvidence": {
             "items": {
               "$ref": "#/components/schemas/FieldEvidence"
             },
             "type": "array",
-            "title": "Field Evidence"
+            "title": "Fieldevidence"
           }
         },
         "type": "object",
         "required": [
-          "predicted_field",
-          "field_evidence"
+          "predictedField",
+          "fieldEvidence"
         ],
         "title": "ExtractResponse"
       },
@@ -216,12 +216,12 @@
             "type": "string",
             "title": "Field"
           },
-          "matched_skills": {
+          "matchedSkills": {
             "items": {
               "type": "string"
             },
             "type": "array",
-            "title": "Matched Skills"
+            "title": "Matchedskills"
           },
           "confidence": {
             "type": "number",
@@ -231,7 +231,7 @@
         "type": "object",
         "required": [
           "field",
-          "matched_skills",
+          "matchedSkills",
           "confidence"
         ],
         "title": "FieldEvidence"
