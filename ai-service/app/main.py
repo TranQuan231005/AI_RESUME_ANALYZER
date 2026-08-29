@@ -11,6 +11,7 @@ from app.schemas import (
 )
 from app.extraction.features import extract_features
 from app.extraction.classifier import classify_features
+from app.validation import validate_pdf_file
 
 app = FastAPI(
     title="AI Resume Analyzer - AI Service",
@@ -63,6 +64,9 @@ async def analyze_resume(
     file: UploadFile = File(..., description="Resume PDF file (max 5 MB)"),
 ) -> ResumeAnalysisResult:
     """Extract features, classify field, score resume, and provide recommendations."""
+    # Kiểm tra tính hợp lệ của file PDF (dung lượng và magic bytes)
+    await validate_pdf_file(file)
+    
     # Stubs for D2 - actual pipeline implementation is in later tasks
     raise NotImplementedError("Pipeline implementation will be integrated in D7-D8")
 
@@ -95,5 +99,8 @@ async def analyze_match(
     ] = None,
 ) -> MatchResult:
     """Match resume features against job description skills and ATS criteria."""
+    # Kiểm tra tính hợp lệ của file PDF trước khi match
+    await validate_pdf_file(file)
+    
     # Stubs for D2 - actual pipeline implementation is in later tasks
     raise NotImplementedError("Pipeline implementation will be integrated in D7-D8")
