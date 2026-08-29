@@ -167,12 +167,12 @@ def test_timeout_is_classified_without_retry() -> None:
 def test_retry_uses_only_time_remaining_from_total_timeout() -> None:
     malformed = {"response": "not-json"}
     valid = {"response": json.dumps({"status": "too late"})}
-    with mock_ollama_server([(200, malformed, 0.03), (200, valid, 0.05)]) as (
+    with mock_ollama_server([(200, malformed, 0.01), (200, valid, 0.05)]) as (
         base_url,
         requests,
     ):
         with pytest.raises(OllamaClientError) as error:
-            make_client(base_url, timeout_seconds=0.06).generate_json("system", "user")
+            make_client(base_url, timeout_seconds=0.035).generate_json("system", "user")
 
     assert error.value.code == OllamaErrorCode.TIMEOUT
     assert len(requests) == 2
