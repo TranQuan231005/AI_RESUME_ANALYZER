@@ -6,7 +6,6 @@ from app.extraction.router import router as extraction_router
 
 app = FastAPI(title="AI Service Contract API")
 
-# Đăng ký router trích xuất để giải quyết lỗi 404 cho /api/extract-features
 app.include_router(extraction_router, prefix="/api")
 
 @app.post(
@@ -20,18 +19,16 @@ async def analyze_match(
         UploadFile,
         File(description="Resume PDF file (max 5 MB)"),
     ],
-    job_description: Annotated[
+    jobDescription: Annotated[
         str,
         Form(
-            alias="jobDescription",
             min_length=50,
             description="Job description text",
         ),
     ],
-    target_role: Annotated[
+    targetRole: Annotated[
         Optional[str],
         Form(
-            alias="targetRole",
             description="Target role name (optional)",
         ),
     ] = None,
