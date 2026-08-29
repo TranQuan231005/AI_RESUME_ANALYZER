@@ -44,3 +44,13 @@ export interface ResumeAnalysisResult {
   recommendations: string[];
   ai: AiMetadata;
 }
+
+export interface ResumeResultLocationState {
+  result?: ResumeAnalysisResult;
+}
+
+export interface ApiErrorResponse {
+  message: string;
+  statusCode?: number;
+  error?: string;
+}
