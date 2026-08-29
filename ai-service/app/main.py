@@ -1,6 +1,7 @@
 from typing import Annotated, Optional
 from fastapi import FastAPI, UploadFile, File, Form
-from app.schemas.matching import MatchResult  # <-- Thêm dòng này để import MatchResult
+from app.schemas.matching import MatchResult
+from app.validation import validate_pdf_file
 
 app = FastAPI()
 
