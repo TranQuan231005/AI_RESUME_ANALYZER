@@ -1,4 +1,5 @@
-from fastapi import FastAPI, UploadFile, File, Form, Annotated
+from typing import Annotated, Optional
+from fastapi import FastAPI, UploadFile, File, Form
 from typing import Optional
 
 app = FastAPI()  # <-- Thêm dòng này ở đầu file
