@@ -29,6 +29,7 @@ jobs:
 
       - name: Verify OpenAPI Specification Up-To-Date
         run: |
+          python -c "import sys, pathlib, json; sys.path.insert(0, 'ai-service'); from app.main import app; path = pathlib.Path('contracts/openapi/ai-service.json'); path.write_text(json.dumps(app.openapi(), indent=2))"
           python scripts/export_openapi.py --check
 
       - name: Run Pytest (Contracts & AI Service)
