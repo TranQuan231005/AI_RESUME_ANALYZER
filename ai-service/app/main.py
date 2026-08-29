@@ -1,3 +1,8 @@
+from fastapi import FastAPI, UploadFile, File, Form, Annotated
+from typing import Optional
+
+app = FastAPI()  # <-- Thêm dòng này ở đầu file
+
 @app.post(
     "/api/analyze-match",
     response_model=MatchResult,
