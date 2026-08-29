@@ -1,8 +1,8 @@
 from typing import Annotated, Optional
 from fastapi import FastAPI, UploadFile, File, Form
-from typing import Optional
+from app.schemas.matching import MatchResult  # <-- Thêm dòng này để import MatchResult
 
-app = FastAPI()  # <-- Thêm dòng này ở đầu file
+app = FastAPI()
 
 @app.post(
     "/api/analyze-match",
