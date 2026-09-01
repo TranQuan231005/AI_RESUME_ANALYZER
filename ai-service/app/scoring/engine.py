@@ -6,9 +6,11 @@ from app.schemas import ParsedDocument, ResumeFeatures, ScoreBreakdown
 def calculate_score(document: ParsedDocument, features: ResumeFeatures) -> ScoreBreakdown:
     text = document.text or ""
     contact_score = 0.0
-    if getattr(features, "candidateName", None) and features.candidateName.strip():
+    cand_name = getattr(features, "candidateName", None) or getattr(features, "candidate_name", None)
+    if cand_name and str(cand_name).strip():
         contact_score += 2.5
-    if getattr(features, "candidateEmail", None) and features.candidateEmail.strip():
+    cand_email = getattr(features, "candidateEmail", None) or getattr(features, "candidate_email", None)
+    if cand_email and str(cand_email).strip():
         contact_score += 2.5
     contact = min(5, max(0, int(contact_score)))
 

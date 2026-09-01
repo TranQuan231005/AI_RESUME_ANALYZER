@@ -8,7 +8,7 @@ from .scoring import ScoreBreakdown
 class ResumeAnalysisResult(SchemaBase):
     file_name: str = Field(..., serialization_alias="fileName", alias="fileName")
     candidate_name: Optional[str] = Field(
-        default=None,
+        default=None,   
         serialization_alias="candidateName",
         alias="candidateName",
     )
