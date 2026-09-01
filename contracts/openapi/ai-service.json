@@ -2,7 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "AI Service Contract API",
-    "version": "0.1.0"
+    "description": "AI Service for Resume Parsing, Feature Extraction, Rubric Scoring, JD Matching, and Ollama Hybrid Enrichment.",
+    "version": "1.0.0"
   },
   "paths": {
     "/api/extract-features": {
@@ -29,6 +30,69 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExtractResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": [
+          "Health"
+        ],
+        "summary": "Health check",
+        "operationId": "health_check_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/analyze-resume": {
+      "post": {
+        "tags": [
+          "Resume Analysis"
+        ],
+        "summary": "Analyze resume PDF",
+        "description": "Analyze resume PDF: validate, extract features, compute rubric scores and enrich with LLM.",
+        "operationId": "analyze_resume_api_analyze_resume_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_analyze_resume_api_analyze_resume_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResumeAnalysisResult"
                 }
               }
             }
@@ -131,7 +195,7 @@
         "properties": {
           "file": {
             "type": "string",
-            "contentMediaType": "application/octet-stream",
+            "format": "binary",
             "title": "File",
             "description": "Resume PDF file (max 5 MB)"
           },
@@ -160,6 +224,21 @@
           "jobDescription"
         ],
         "title": "Body_analyze_match_api_analyze_match_post"
+      },
+      "Body_analyze_resume_api_analyze_resume_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "title": "File",
+            "description": "Resume PDF file (max 5 MB)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_analyze_resume_api_analyze_resume_post"
       },
       "ExtractRequest": {
         "properties": {
@@ -212,7 +291,7 @@
           },
           "fieldEvidence": {
             "items": {
-              "$ref": "#/components/schemas/FieldEvidence"
+              "$ref": "#/components/schemas/app__extraction__router__FieldEvidence"
             },
             "type": "array",
             "title": "Fieldevidence"
@@ -228,31 +307,17 @@
         ],
         "title": "ExtractResponse"
       },
-      "FieldEvidence": {
-        "properties": {
-          "field": {
-            "type": "string",
-            "title": "Field"
-          },
-          "matchedSkills": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Matchedskills"
-          },
-          "confidence": {
-            "type": "number",
-            "title": "Confidence"
-          }
-        },
-        "type": "object",
-        "required": [
-          "field",
-          "matchedSkills",
-          "confidence"
+      "FieldEnum": {
+        "type": "string",
+        "enum": [
+          "Data Science",
+          "Web Development",
+          "Android Development",
+          "iOS Development",
+          "UI/UX",
+          "Unknown"
         ],
-        "title": "FieldEvidence"
+        "title": "FieldEnum"
       },
       "HTTPValidationError": {
         "properties": {
@@ -266,6 +331,27 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "HealthResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "default": "healthy"
+          },
+          "model": {
+            "type": "string",
+            "title": "Model",
+            "default": "qwen3:4b"
+          },
+          "ollamaReachable": {
+            "type": "boolean",
+            "title": "Ollamareachable",
+            "default": false
+          }
+        },
+        "type": "object",
+        "title": "HealthResponse"
       },
       "MatchResult": {
         "properties": {
@@ -342,6 +428,161 @@
         ],
         "title": "MatchResult"
       },
+      "ResumeAnalysisResult": {
+        "properties": {
+          "fileName": {
+            "type": "string",
+            "title": "Filename"
+          },
+          "candidateName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Candidatename"
+          },
+          "candidateEmail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Candidateemail"
+          },
+          "skills": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Skills"
+          },
+          "predictedField": {
+            "$ref": "#/components/schemas/FieldEnum"
+          },
+          "fieldEvidence": {
+            "items": {
+              "$ref": "#/components/schemas/app__schemas__features__FieldEvidence"
+            },
+            "type": "array",
+            "title": "Fieldevidence"
+          },
+          "resumeScore": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Resumescore"
+          },
+          "scoreBreakdown": {
+            "$ref": "#/components/schemas/ScoreBreakdown"
+          },
+          "recommendedSkills": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 8,
+            "title": "Recommendedskills"
+          },
+          "recommendations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 8,
+            "title": "Recommendations"
+          },
+          "ai": {
+            "$ref": "#/components/schemas/AiMetadata"
+          }
+        },
+        "type": "object",
+        "required": [
+          "fileName",
+          "predictedField",
+          "resumeScore",
+          "scoreBreakdown",
+          "ai"
+        ],
+        "title": "ResumeAnalysisResult"
+      },
+      "ScoreBreakdown": {
+        "properties": {
+          "contact": {
+            "type": "integer",
+            "maximum": 5.0,
+            "minimum": 0.0,
+            "title": "Contact"
+          },
+          "summary": {
+            "type": "integer",
+            "maximum": 10.0,
+            "minimum": 0.0,
+            "title": "Summary"
+          },
+          "skills": {
+            "type": "integer",
+            "maximum": 15.0,
+            "minimum": 0.0,
+            "title": "Skills"
+          },
+          "education": {
+            "type": "integer",
+            "maximum": 10.0,
+            "minimum": 0.0,
+            "title": "Education"
+          },
+          "experience": {
+            "type": "integer",
+            "maximum": 20.0,
+            "minimum": 0.0,
+            "title": "Experience"
+          },
+          "projects": {
+            "type": "integer",
+            "maximum": 15.0,
+            "minimum": 0.0,
+            "title": "Projects"
+          },
+          "achievementsCertifications": {
+            "type": "integer",
+            "maximum": 10.0,
+            "minimum": 0.0,
+            "title": "Achievementscertifications"
+          },
+          "quantifiedImpact": {
+            "type": "integer",
+            "maximum": 15.0,
+            "minimum": 0.0,
+            "title": "Quantifiedimpact"
+          },
+          "total": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "contact",
+          "summary",
+          "skills",
+          "education",
+          "experience",
+          "projects",
+          "achievementsCertifications",
+          "quantifiedImpact",
+          "total"
+        ],
+        "title": "ScoreBreakdown"
+      },
       "ValidationError": {
         "properties": {
           "loc": {
@@ -365,13 +606,6 @@
           "type": {
             "type": "string",
             "title": "Error Type"
-          },
-          "input": {
-            "title": "Input"
-          },
-          "ctx": {
-            "type": "object",
-            "title": "Context"
           }
         },
         "type": "object",
@@ -381,6 +615,58 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "app__extraction__router__FieldEvidence": {
+        "properties": {
+          "field": {
+            "type": "string",
+            "title": "Field"
+          },
+          "matchedSkills": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Matchedskills"
+          },
+          "confidence": {
+            "type": "number",
+            "title": "Confidence"
+          }
+        },
+        "type": "object",
+        "required": [
+          "field",
+          "matchedSkills",
+          "confidence"
+        ],
+        "title": "FieldEvidence"
+      },
+      "app__schemas__features__FieldEvidence": {
+        "properties": {
+          "field": {
+            "$ref": "#/components/schemas/FieldEnum"
+          },
+          "matchedSkills": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Matchedskills"
+          },
+          "confidence": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence"
+          }
+        },
+        "type": "object",
+        "required": [
+          "field",
+          "confidence"
+        ],
+        "title": "FieldEvidence"
       }
     }
   }

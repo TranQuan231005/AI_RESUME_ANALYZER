@@ -29,6 +29,16 @@ class SchemaBase(BaseModel):
         use_enum_values=True,
     )
 
+    def __getattr__(self, item: str) -> Any:
+        try:
+            return super().__getattribute__(item)
+        except AttributeError:
+            fields = object.__getattribute__(self, "__class__").model_fields
+            for field_name, field_info in fields.items():
+                if field_info.alias == item or field_info.serialization_alias == item:
+                    return getattr(self, field_name)
+            raise AttributeError(f"'{type(self).__name__}' object has no attribute '{item}'")
+
 
 class AiMetadata(SchemaBase):
     provider: AiProvider
