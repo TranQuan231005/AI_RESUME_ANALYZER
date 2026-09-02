@@ -5,6 +5,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { DashboardPage } from './DashboardPage';
 import * as AuthContextModule from '../context/AuthContext';
 import * as analysisApi from '../api/analysis';
+import type { PersistedResumeAnalysisResponse } from '../types/analysis';
 
 jest.mock('../api/analysis');
 jest.mock('../context/AuthContext');
@@ -103,7 +104,13 @@ describe('DashboardPage', () => {
       },
     };
 
-    jest.mocked(analysisApi.uploadResume).mockResolvedValueOnce(mockResult);
+    const mockResponse: PersistedResumeAnalysisResponse = {
+      id: 1,
+      createdAt: '2026-09-02T10:00:00.000Z',
+      result: mockResult,
+    };
+
+    jest.mocked(analysisApi.uploadResume).mockResolvedValueOnce(mockResponse);
 
     renderDashboard();
 
