@@ -35,11 +35,14 @@ class AnalysisServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private com.resumeanalyzer.ai.AiServiceClient aiServiceClient;
+
     private AnalysisService service;
 
     @BeforeEach
     void setUp() {
-        service = new AnalysisService(repository, userRepository, new ObjectMapper());
+        service = new AnalysisService(repository, userRepository, new ObjectMapper(), aiServiceClient);
     }
 
     @Test

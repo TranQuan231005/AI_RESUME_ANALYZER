@@ -10,10 +10,17 @@ spring:
       ddl-auto: validate
     open-in-view: false
 
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 10MB
+
 server:
   port: ${PORT:8080}
 
 app:
+  ai-service:
+    base-url: ${AI_SERVICE_URL:http://localhost:8000}
   security:
     jwt:
       secret: ${JWT_SECRET:}

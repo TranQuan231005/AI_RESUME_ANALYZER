@@ -28,13 +28,15 @@ import org.springframework.data.domain.Sort;
 class HistoryServiceTest {
     private AnalysisResultRepository repository;
     private UserRepository userRepository;
+    private com.resumeanalyzer.ai.AiServiceClient aiServiceClient;
     private AnalysisService service;
 
     @BeforeEach
     void setUp() {
         repository = mock(AnalysisResultRepository.class);
         userRepository = mock(UserRepository.class);
-        service = new AnalysisService(repository, userRepository, new ObjectMapper());
+        aiServiceClient = mock(com.resumeanalyzer.ai.AiServiceClient.class);
+        service = new AnalysisService(repository, userRepository, new ObjectMapper(), aiServiceClient);
     }
 
     @Test
