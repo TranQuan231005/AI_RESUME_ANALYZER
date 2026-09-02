@@ -2,31 +2,136 @@ package com.resumeanalyzer.analysis;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.resumeanalyzer.ai.AiServiceClient;
 import com.resumeanalyzer.analysis.dto.AnalysisDetailResponse;
 import com.resumeanalyzer.analysis.dto.AnalysisSummaryDto;
 import com.resumeanalyzer.analysis.dto.PagedAnalysisSummary;
+import com.resumeanalyzer.analysis.dto.PersistedMatchResponse;
+import com.resumeanalyzer.analysis.dto.PersistedResumeAnalysisResponse;
 import com.resumeanalyzer.user.User;
 import com.resumeanalyzer.user.UserRepository;
+import java.time.Instant;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 public class AnalysisService {
     private final AnalysisResultRepository repository;
     private final UserRepository userRepository;
     private final ObjectMapper objectMapper;
+    private final AiServiceClient aiServiceClient;
 
     public AnalysisService(
         AnalysisResultRepository repository,
         UserRepository userRepository,
-        ObjectMapper objectMapper
+        ObjectMapper objectMapper,
+        AiServiceClient aiServiceClient
     ) {
         this.repository = repository;
         this.userRepository = userRepository;
         this.objectMapper = objectMapper;
+        this.aiServiceClient = aiServiceClient;
+    }
+
+    @Transactional
+    public PersistedResumeAnalysisResponse analyzeResume(Long userId, MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("Resume file is required.");
+        }
+        if (file.getSize() > 5 * 1024 * 1024) {
+            throw new IllegalArgumentException("File size exceeds 5MB limit.");
+        }
+
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
+
+        JsonNode aiResult = aiServiceClient.analyzeResume(file);
+
+        AnalysisResult result = new AnalysisResult();
+        result.setUser(user);
+        result.setAnalysisType("RESUME");
+        result.setFileName(aiResult.hasNonNull("fileName") ? aiResult.get("fileName").asText() : (file.getOriginalFilename() != null ? file.getOriginalFilename() : "resume.pdf"));
+        result.setCandidateName(aiResult.hasNonNull("candidateName") ? aiResult.get("candidateName").asText() : null);
+        result.setCandidateEmail(aiResult.hasNonNull("candidateEmail") ? aiResult.get("candidateEmail").asText() : null);
+        result.setPredictedField(aiResult.hasNonNull("predictedField") ? aiResult.get("predictedField").asText() : "Unknown");
+        result.setResumeScore(aiResult.hasNonNull("resumeScore") ? aiResult.get("resumeScore").asInt() : 0);
+        result.setMatchScore(null);
+        result.setTargetRole(null);
+        result.setResultJson(aiResult);
+
+        JsonNode aiMetadata = aiResult.get("ai");
+        if (aiMetadata != null) {
+            result.setAiProvider(aiMetadata.hasNonNull("provider") ? aiMetadata.get("provider").asText() : "RULE_BASED");
+            result.setAiModel(aiMetadata.hasNonNull("model") ? aiMetadata.get("model").asText() : "deterministic-v1");
+            result.setUsedFallback(aiMetadata.hasNonNull("usedFallback") && aiMetadata.get("usedFallback").asBoolean());
+            result.setProcessingMs(aiMetadata.hasNonNull("processingMs") ? aiMetadata.get("processingMs").asLong() : 0L);
+        } else {
+            result.setAiProvider("RULE_BASED");
+            result.setAiModel("deterministic-v1");
+            result.setUsedFallback(true);
+            result.setProcessingMs(0L);
+        }
+
+        AnalysisResult saved = repository.save(result);
+        return new PersistedResumeAnalysisResponse(
+            saved.getId(),
+            saved.getCreatedAt() != null ? saved.getCreatedAt() : Instant.now(),
+            saved.getResultJson()
+        );
+    }
+
+    @Transactional
+    public PersistedMatchResponse analyzeMatch(Long userId, MultipartFile file, String jobDescription, String targetRole) {
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("Resume file is required.");
+        }
+        if (file.getSize() > 5 * 1024 * 1024) {
+            throw new IllegalArgumentException("File size exceeds 5MB limit.");
+        }
+        if (jobDescription == null || jobDescription.trim().length() < 50) {
+            throw new IllegalArgumentException("Job description must be at least 50 characters.");
+        }
+
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
+
+        JsonNode aiResult = aiServiceClient.analyzeMatch(file, jobDescription, targetRole);
+
+        AnalysisResult result = new AnalysisResult();
+        result.setUser(user);
+        result.setAnalysisType("MATCH");
+        result.setFileName(aiResult.hasNonNull("fileName") ? aiResult.get("fileName").asText() : (file.getOriginalFilename() != null ? file.getOriginalFilename() : "resume.pdf"));
+        result.setCandidateName(null);
+        result.setCandidateEmail(null);
+        result.setPredictedField(null);
+        result.setResumeScore(null);
+        result.setMatchScore(aiResult.hasNonNull("matchScore") ? aiResult.get("matchScore").asInt() : 0);
+        result.setTargetRole(aiResult.hasNonNull("targetRole") ? aiResult.get("targetRole").asText() : (targetRole != null ? targetRole : "Unspecified Role"));
+        result.setResultJson(aiResult);
+
+        JsonNode aiMetadata = aiResult.get("ai");
+        if (aiMetadata != null) {
+            result.setAiProvider(aiMetadata.hasNonNull("provider") ? aiMetadata.get("provider").asText() : "RULE_BASED");
+            result.setAiModel(aiMetadata.hasNonNull("model") ? aiMetadata.get("model").asText() : "deterministic-v1");
+            result.setUsedFallback(aiMetadata.hasNonNull("usedFallback") && aiMetadata.get("usedFallback").asBoolean());
+            result.setProcessingMs(aiMetadata.hasNonNull("processingMs") ? aiMetadata.get("processingMs").asLong() : 0L);
+        } else {
+            result.setAiProvider("RULE_BASED");
+            result.setAiModel("deterministic-v1");
+            result.setUsedFallback(true);
+            result.setProcessingMs(0L);
+        }
+
+        AnalysisResult saved = repository.save(result);
+        return new PersistedMatchResponse(
+            saved.getId(),
+            saved.getCreatedAt() != null ? saved.getCreatedAt() : Instant.now(),
+            saved.getResultJson()
+        );
     }
 
     @Transactional

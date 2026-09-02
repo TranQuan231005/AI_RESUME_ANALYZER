@@ -1,5 +1,7 @@
 package com.resumeanalyzer.common;
 
+import com.resumeanalyzer.ai.AiServiceException;
+import com.resumeanalyzer.ai.InvalidPdfException;
 import com.resumeanalyzer.analysis.AnalysisForbiddenException;
 import com.resumeanalyzer.analysis.AnalysisNotFoundException;
 import com.resumeanalyzer.auth.InvalidCredentialsException;
@@ -14,11 +16,12 @@ import org.springframework.core.annotation.Order;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.method.annotation.HandlerMethodValidationException;
-import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 @RestControllerAdvice
 @Order(Ordered.HIGHEST_PRECEDENCE)
@@ -45,6 +48,36 @@ public class ApiExceptionHandler {
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     public ApiError handleUnauthorized(UnauthenticatedException ex, HttpServletRequest request) {
         return error(401, "UNAUTHORIZED", ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(InvalidPdfException.class)
+    @ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
+    public ApiError handleInvalidPdf(InvalidPdfException ex, HttpServletRequest request) {
+        return error(422, "INVALID_PDF", ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    @ResponseStatus(HttpStatus.PAYLOAD_TOO_LARGE)
+    public ApiError handlePayloadTooLarge(MaxUploadSizeExceededException ex, HttpServletRequest request) {
+        return error(413, "FILE_TOO_LARGE", "File size exceeds the 5MB limit.", request);
+    }
+
+    @ExceptionHandler(AiServiceException.class)
+    @ResponseStatus(HttpStatus.BAD_GATEWAY)
+    public ApiError handleAiServiceError(AiServiceException ex, HttpServletRequest request) {
+        return error(502, "AI_SERVICE_ERROR", "AI service is currently unavailable or failed to process.", request);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiError handleIllegalArgument(IllegalArgumentException ex, HttpServletRequest request) {
+        if (ex.getMessage() != null && ex.getMessage().contains("5MB")) {
+            return error(413, "FILE_TOO_LARGE", ex.getMessage(), request);
+        }
+        if (ex.getMessage() != null && ex.getMessage().contains("50 characters")) {
+            return error(422, "JD_REQUIRED", ex.getMessage(), request);
+        }
+        return error(400, "MALFORMED_REQUEST", ex.getMessage(), request);
     }
 
     @ExceptionHandler({
@@ -90,5 +123,4 @@ public class ApiExceptionHandler {
             UUID.randomUUID().toString()
         );
     }
-
 }

@@ -8,6 +8,7 @@ import { DashboardPage } from './pages/DashboardPage';
 import { ForbiddenPage } from './pages/ForbiddenPage';
 import { LoginPage } from './pages/LoginPage';
 import { ResumeResultPage } from './pages/ResumeResultPage';
+import { MatchResultPage } from './pages/MatchResultPage';
 
 export default function App() {
   return (
@@ -19,6 +20,7 @@ export default function App() {
           <Route element={<ProtectedRoute allowedRoles={['USER']} />}>
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/resume/result" element={<ResumeResultPage />} />
+            <Route path="/match/result" element={<MatchResultPage />} />
           </Route>
           <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
             <Route path="/admin" element={<AdminPage />} />

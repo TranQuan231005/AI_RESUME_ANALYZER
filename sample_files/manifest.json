@@ -1,0 +1,62 @@
+{
+  "version": "1.0.0",
+  "totalResumes": 7,
+  "resumes": [
+    {
+      "filename": "01_data_science_senior.pdf",
+      "candidateName": "Dr. Sarah Chen",
+      "predictedDomain": "Data Science",
+      "targetScoreBracket": "85-95",
+      "hasContactInfo": true,
+      "keySkills": "Python, SQL, Pandas, NumPy, Scikit-learn, PyTorch, TensorFlow, Docker, Git, AWS, Spark, Tableau, Machine Learning, Deep Learning, REST APIs"
+    },
+    {
+      "filename": "02_web_developer_mid.pdf",
+      "candidateName": "Alex Rivera",
+      "predictedDomain": "Web Development",
+      "targetScoreBracket": "75-85",
+      "hasContactInfo": true,
+      "keySkills": "JavaScript, TypeScript, React, Node.js, Express, HTML, CSS, Next.js, PostgreSQL, Docker, Git, Jest, TailwindCSS, REST APIs"
+    },
+    {
+      "filename": "03_android_developer.pdf",
+      "candidateName": "Marcus Vance",
+      "predictedDomain": "Android Development",
+      "targetScoreBracket": "70-80",
+      "hasContactInfo": true,
+      "keySkills": "Kotlin, Java, Android SDK, Jetpack Compose, Coroutines, Room, Retrofit, MVVM, Dagger-Hilt, Git, Firebase, REST APIs, JUnit"
+    },
+    {
+      "filename": "04_ios_developer.pdf",
+      "candidateName": "Elena Rostova",
+      "predictedDomain": "iOS Development",
+      "targetScoreBracket": "75-85",
+      "hasContactInfo": true,
+      "keySkills": "Swift, SwiftUI, UIKit, Combine, CoreData, Xcode, CocoaPods, REST APIs, Git, TestFlight, Objective-C, CI/CD"
+    },
+    {
+      "filename": "05_ui_ux_designer.pdf",
+      "candidateName": "Maya Patel",
+      "predictedDomain": "UI/UX",
+      "targetScoreBracket": "70-80",
+      "hasContactInfo": true,
+      "keySkills": "Figma, Adobe XD, Sketch, Wireframing, Prototyping, User Research, Usability Testing, Information Architecture, HTML, CSS, Design Systems"
+    },
+    {
+      "filename": "06_junior_minimal_edge_case.pdf",
+      "candidateName": "Jordan Smith",
+      "predictedDomain": "Web Development",
+      "targetScoreBracket": "30-45",
+      "hasContactInfo": true,
+      "keySkills": "HTML, CSS, JavaScript"
+    },
+    {
+      "filename": "07_missing_contact_info_edge_case.pdf",
+      "candidateName": null,
+      "predictedDomain": "Web Development",
+      "targetScoreBracket": "45-60",
+      "hasContactInfo": false,
+      "keySkills": "Java, Spring Boot, MySQL, REST APIs, Git, Docker"
+    }
+  ]
+}

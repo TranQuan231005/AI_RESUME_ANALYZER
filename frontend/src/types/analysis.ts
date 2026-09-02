@@ -45,8 +45,99 @@ export interface ResumeAnalysisResult {
   ai: AiMetadata;
 }
 
+export interface MatchResult {
+  fileName: string;
+  targetRole: string;
+  matchScore: number;
+  matchedSkills: string[];
+  missingSkills: string[];
+  atsKeywords: string[];
+  strengths: string[];
+  weaknesses: string[];
+  recommendations: string[];
+  ai: AiMetadata;
+}
+
+export interface PersistedResumeAnalysisResponse {
+  id: number;
+  createdAt: string;
+  result: ResumeAnalysisResult;
+}
+
+export interface PersistedMatchResponse {
+  id: number;
+  createdAt: string;
+  result: MatchResult;
+}
+
+export interface AnalysisSummaryDto {
+  id: number;
+  analysisType: 'RESUME' | 'MATCH';
+  fileName: string;
+  candidateName: string | null;
+  predictedField: string | null;
+  resumeScore: number | null;
+  matchScore: number | null;
+  targetRole: string | null;
+  aiProvider: string;
+  usedFallback: boolean;
+  createdAt: string;
+}
+
+export interface PagedAnalysisSummary {
+  items: AnalysisSummaryDto[];
+  page: number;
+  size: number;
+  totalItems: number;
+  totalPages: number;
+}
+
+export interface AnalysisDetailResponse {
+  id: number;
+  analysisType: 'RESUME' | 'MATCH';
+  fileName: string;
+  createdAt: string;
+  resultJson: Record<string, any>;
+}
+
+export interface AdminMetricsResponse {
+  totalAnalyses: number;
+  resumeAnalysesCount: number;
+  matchAnalysesCount: number;
+  fallbackRate: number;
+  avgLatencyMs: number;
+  p95LatencyMs: number;
+}
+
+export interface UserDto {
+  id: number;
+  email: string;
+  fullName: string;
+  role: 'USER' | 'ADMIN';
+}
+
+export interface PagedUsers {
+  items: UserDto[];
+  page: number;
+  size: number;
+  totalItems: number;
+  totalPages: number;
+}
+
+export interface PagedAdminAnalyses {
+  items: AnalysisSummaryDto[];
+  page: number;
+  size: number;
+  totalItems: number;
+  totalPages: number;
+}
+
 export interface ResumeResultLocationState {
   result?: ResumeAnalysisResult;
+}
+
+export interface MatchResultLocationState {
+  result?: MatchResult;
 }
 
 export interface ApiErrorResponse {
