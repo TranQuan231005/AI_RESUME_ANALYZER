@@ -217,17 +217,24 @@
             "multipart/form-data": {
               "schema": {
                 "type": "object",
-                "required": ["file", "jobDescription"],
+                "required": ["file"],
                 "properties": {
                   "file": {
                     "type": "string",
                     "format": "binary",
                     "description": "Resume PDF file (max 5 MB)"
                   },
+                  "jdFile": {
+                    "type": "string",
+                    "format": "binary",
+                    "nullable": true,
+                    "description": "Job description PDF file (max 5 MB, optional if jobDescription is provided)"
+                  },
                   "jobDescription": {
                     "type": "string",
                     "minLength": 50,
-                    "description": "Job description text (min 50 characters)"
+                    "nullable": true,
+                    "description": "Job description text (min 50 characters, optional if jdFile is provided)"
                   },
                   "targetRole": {
                     "type": "string",
@@ -839,6 +846,7 @@
         ],
         "properties": {
           "fileName": { "type": "string" },
+          "jdFileName": { "type": "string", "nullable": true },
           "targetRole": { "type": "string" },
           "matchScore": { "type": "integer", "minimum": 0, "maximum": 100 },
           "matchedSkills": { "type": "array", "items": { "type": "string" } },

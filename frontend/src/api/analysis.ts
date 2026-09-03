@@ -41,15 +41,21 @@ export const uploadResume = async (
 
 export const matchJobDescription = async (
   file: File,
-  jobDescription: string,
+  jobDescription: string | undefined,
   targetRole: string | undefined,
-  token: string
+  token: string,
+  jdFile?: File | null
 ): Promise<PersistedMatchResponse> => {
   const formData = new FormData();
   formData.append('file', file);
-  formData.append('jobDescription', jobDescription);
-  if (targetRole) {
-    formData.append('targetRole', targetRole);
+  if (jdFile) {
+    formData.append('jdFile', jdFile);
+  }
+  if (jobDescription && jobDescription.trim()) {
+    formData.append('jobDescription', jobDescription.trim());
+  }
+  if (targetRole && targetRole.trim()) {
+    formData.append('targetRole', targetRole.trim());
   }
 
   const response = await fetch('/api/analyses/match', {

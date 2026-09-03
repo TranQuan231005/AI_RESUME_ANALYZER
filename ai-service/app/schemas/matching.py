@@ -19,6 +19,11 @@ class MatchAnalysisRequest(SchemaBase):
 
 class MatchResult(SchemaBase):
     file_name: str = Field(..., serialization_alias="fileName", alias="fileName")
+    jd_file_name: Optional[str] = Field(
+        default=None,
+        serialization_alias="jdFileName",
+        alias="jdFileName",
+    )
     target_role: str = Field(..., serialization_alias="targetRole", alias="targetRole")
     match_score: int = Field(
         ...,

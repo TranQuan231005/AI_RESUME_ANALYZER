@@ -44,10 +44,11 @@ public class AnalysisController {
     public PersistedMatchResponse analyzeMatch(
         AuthenticatedUser authenticatedUser,
         @RequestParam("file") MultipartFile file,
-        @RequestParam("jobDescription") String jobDescription,
+        @RequestParam(value = "jdFile", required = false) MultipartFile jdFile,
+        @RequestParam(value = "jobDescription", required = false) String jobDescription,
         @RequestParam(value = "targetRole", required = false) String targetRole
     ) {
-        return service.analyzeMatch(authenticatedUser.id(), file, jobDescription, targetRole);
+        return service.analyzeMatch(authenticatedUser.id(), file, jdFile, jobDescription, targetRole);
     }
 
     @GetMapping

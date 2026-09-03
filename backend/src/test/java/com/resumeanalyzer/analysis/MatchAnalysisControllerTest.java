@@ -85,4 +85,45 @@ class MatchAnalysisControllerTest {
             .andExpect(jsonPath("$.result.targetRole").value("Senior Java Engineer"))
             .andExpect(jsonPath("$.result.matchScore").value(90));
     }
+
+    @Test
+    @WithMockUser(username = "1", roles = "USER")
+    void analyzeMatchWithJdPdfSuccessReturns201() throws Exception {
+        MockMultipartFile file = new MockMultipartFile(
+            "file",
+            "resume.pdf",
+            "application/pdf",
+            "%PDF-1.4 sample content".getBytes()
+        );
+        MockMultipartFile jdFile = new MockMultipartFile(
+            "jdFile",
+            "job_description.pdf",
+            "application/pdf",
+            "%PDF-1.4 sample jd content".getBytes()
+        );
+
+        ObjectNode resultJson = objectMapper.createObjectNode();
+        resultJson.put("fileName", "resume.pdf");
+        resultJson.put("jdFileName", "job_description.pdf");
+        resultJson.put("targetRole", "Lead Architect");
+        resultJson.put("matchScore", 85);
+
+        PersistedMatchResponse response = new PersistedMatchResponse(
+            103L,
+            Instant.parse("2026-08-31T12:00:00Z"),
+            resultJson
+        );
+
+        when(service.analyzeMatch(eq(1L), any(), any(), eq(null), eq(null)))
+            .thenReturn(response);
+
+        mockMvc.perform(multipart("/api/analyses/match")
+                .file(file)
+                .file(jdFile))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.id").value(103))
+            .andExpect(jsonPath("$.result.jdFileName").value("job_description.pdf"))
+            .andExpect(jsonPath("$.result.targetRole").value("Lead Architect"))
+            .andExpect(jsonPath("$.result.matchScore").value(85));
+    }
 }

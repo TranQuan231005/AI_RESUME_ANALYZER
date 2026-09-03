@@ -170,4 +170,118 @@ describe('DashboardPage', () => {
       expect(screen.getByRole('alert')).toHaveTextContent('Server error occurred');
     });
   });
+
+  test('handles matching with dual PDF upload (CV PDF + JD PDF)', async () => {
+    const mockMatchResult = {
+      fileName: 'resume.pdf',
+      jdFileName: 'job_desc.pdf',
+      targetRole: 'Backend Engineer',
+      matchScore: 85,
+      matchedSkills: ['Java', 'Spring Boot'],
+      missingSkills: ['Kubernetes'],
+      atsKeywords: [],
+      strengths: [],
+      weaknesses: [],
+      recommendations: [],
+      ai: {
+        provider: 'RULE_BASED' as const,
+        model: 'deterministic-v1',
+        usedFallback: true,
+        processingMs: 50,
+      },
+    };
+
+    jest.mocked(analysisApi.matchJobDescription).mockResolvedValueOnce({
+      id: 2,
+      createdAt: '2026-09-02T10:00:00.000Z',
+      result: mockMatchResult,
+    });
+
+    renderDashboard();
+
+    // Switch to Job Match tab
+    fireEvent.click(screen.getByRole('button', { name: /job match & ats/i }));
+
+    const cvInput = screen.getByLabelText(/upload candidate cv \(pdf\)/i);
+    const cvFile = new File(['dummy cv'], 'resume.pdf', { type: 'application/pdf' });
+    fireEvent.change(cvInput, { target: { files: [cvFile] } });
+
+    const jdInput = screen.getByLabelText(/upload target job description \(pdf\)/i);
+    const jdFile = new File(['dummy jd'], 'job_desc.pdf', { type: 'application/pdf' });
+    fireEvent.change(jdInput, { target: { files: [jdFile] } });
+
+    const matchBtn = screen.getByRole('button', { name: /run job match & ats analysis/i });
+    expect(matchBtn).toBeEnabled();
+
+    fireEvent.click(matchBtn);
+
+    await waitFor(() => {
+      expect(analysisApi.matchJobDescription).toHaveBeenCalledWith(
+        cvFile,
+        undefined,
+        undefined,
+        mockToken,
+        jdFile
+      );
+      expect(mockNavigate).toHaveBeenCalledWith('/match/result', {
+        state: { result: mockMatchResult },
+      });
+    });
+  });
+
+  test('handles matching with text paste mode', async () => {
+    const mockMatchResult = {
+      fileName: 'resume.pdf',
+      targetRole: 'Frontend Developer',
+      matchScore: 90,
+      matchedSkills: ['React', 'TypeScript'],
+      missingSkills: [],
+      atsKeywords: [],
+      strengths: [],
+      weaknesses: [],
+      recommendations: [],
+      ai: {
+        provider: 'RULE_BASED' as const,
+        model: 'deterministic-v1',
+        usedFallback: true,
+        processingMs: 50,
+      },
+    };
+
+    jest.mocked(analysisApi.matchJobDescription).mockResolvedValueOnce({
+      id: 3,
+      createdAt: '2026-09-02T10:00:00.000Z',
+      result: mockMatchResult,
+    });
+
+    renderDashboard();
+
+    fireEvent.click(screen.getByRole('button', { name: /job match & ats/i }));
+
+    const cvInput = screen.getByLabelText(/upload candidate cv \(pdf\)/i);
+    const cvFile = new File(['dummy cv'], 'resume.pdf', { type: 'application/pdf' });
+    fireEvent.change(cvInput, { target: { files: [cvFile] } });
+
+    // Switch to Paste JD Text tab
+    fireEvent.click(screen.getByTestId('tab-jd-text'));
+
+    const textarea = screen.getByLabelText(/job description text/i);
+    const longJd = 'Looking for a Senior Frontend Developer with 5+ years of experience in React, TypeScript, and CSS.';
+    fireEvent.change(textarea, { target: { value: longJd } });
+
+    const matchBtn = screen.getByRole('button', { name: /run job match & ats analysis/i });
+    expect(matchBtn).toBeEnabled();
+
+    fireEvent.click(matchBtn);
+
+    await waitFor(() => {
+      expect(analysisApi.matchJobDescription).toHaveBeenCalledWith(
+        cvFile,
+        longJd,
+        undefined,
+        mockToken,
+        null
+      );
+    });
+  });
 });

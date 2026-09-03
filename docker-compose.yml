@@ -52,6 +52,7 @@ services:
         condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-docker}
+      DB_URL: jdbc:mysql://mysql:3306/${DB_NAME:-resume_analyzer}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       DB_HOST: mysql
       DB_PORT: 3306
       DB_NAME: ${DB_NAME:-resume_analyzer}

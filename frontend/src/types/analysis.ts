@@ -47,6 +47,7 @@ export interface ResumeAnalysisResult {
 
 export interface MatchResult {
   fileName: string;
+  jdFileName?: string;
   targetRole: string;
   matchScore: number;
   matchedSkills: string[];

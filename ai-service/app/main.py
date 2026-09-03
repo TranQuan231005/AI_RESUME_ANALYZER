@@ -1,9 +1,12 @@
+
+
+
 from __future__ import annotations
 
 import time
 from typing import Annotated, Optional
 
-from fastapi import FastAPI, File, Form, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 
 from app.document.parser import extract_pdf_content
 from app.extraction.classifier import classify_features
@@ -32,6 +35,8 @@ app = FastAPI(
     version="1.0.0",
 )
 
+import threading
+
 app.include_router(extraction_router, prefix="/api")
 
 _ollama_client: Optional[OllamaClient] = None
@@ -47,6 +52,19 @@ def get_ollama_client() -> OllamaClient:
 def set_ollama_client(client: Optional[OllamaClient]) -> None:
     global _ollama_client
     _ollama_client = client
+
+
+@app.on_event("startup")
+def startup_warmup() -> None:
+    """Preload Ollama model in background on app startup to prevent cold-starts."""
+    def _do_warmup() -> None:
+        try:
+            client = get_ollama_client()
+            client.warmup()
+        except Exception:
+            pass
+
+    threading.Thread(target=_do_warmup, daemon=True).start()
 
 
 @app.get(
@@ -293,13 +311,16 @@ async def analyze_match(
         UploadFile,
         File(description="Resume PDF file (max 5 MB)"),
     ],
+    jdFile: Annotated[
+        Optional[UploadFile],
+        File(description="Job description PDF file (max 5 MB, optional if jobDescription is provided)"),
+    ] = None,
     jobDescription: Annotated[
-        str,
+        Optional[str],
         Form(
-            min_length=50,
-            description="Job description text",
+            description="Job description text (optional if jdFile is provided)",
         ),
-    ],
+    ] = None,
     targetRole: Annotated[
         Optional[str],
         Form(
@@ -310,6 +331,29 @@ async def analyze_match(
     """Match resume features against job description skills and ATS criteria."""
     start_time = time.monotonic()
     await validate_pdf_file(file)
+
+    jd_text = ""
+    jd_file_name: Optional[str] = None
+
+    if jdFile is not None and jdFile.filename:
+        await validate_pdf_file(jdFile)
+        jd_bytes = await jdFile.read()
+        parsed_jd = extract_pdf_content(jd_bytes, jdFile.filename)
+        jd_text = parsed_jd.text.strip() if parsed_jd.text else ""
+        jd_file_name = jdFile.filename
+    elif jobDescription and jobDescription.strip():
+        jd_text = jobDescription.strip()
+    else:
+        raise HTTPException(
+            status_code=422,
+            detail="Job description text or valid JD PDF file is required",
+        )
+
+    if len(jd_text) < 50:
+        raise HTTPException(
+            status_code=422,
+            detail="Job description must contain at least 50 characters",
+        )
 
     file_bytes = await file.read()
     parsed_doc = extract_pdf_content(file_bytes, file.filename or "resume.pdf")
@@ -335,8 +379,9 @@ async def analyze_match(
     # 2. Deterministic rule matching
     rule_match = match_resume_to_job(
         file_name=parsed_doc.fileName,
+        jd_file_name=jd_file_name,
         resume_skills=schema_features.skills,
-        job_description=jobDescription,
+        job_description=jd_text,
         target_role=targetRole,
     )
 
@@ -346,7 +391,7 @@ async def analyze_match(
         client=client,
         resume_text=parsed_doc.text,
         features=schema_features,
-        job_description=jobDescription,
+        job_description=jd_text,
         target_role=rule_match.target_role,
         rule_match=rule_match,
     )
@@ -355,6 +400,7 @@ async def analyze_match(
 
     return MatchResult(
         fileName=parsed_doc.fileName,
+        jdFileName=jd_file_name,
         targetRole=rule_match.target_role,
         matchScore=rule_match.match_score,
         matchedSkills=rule_match.matched_skills,

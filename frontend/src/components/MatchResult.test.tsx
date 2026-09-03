@@ -41,4 +41,16 @@ describe('MatchResult', () => {
 
     expect(screen.getByTestId('fallback-badge').textContent).toBe('Fallback Mode');
   });
+
+  test('renders jdFileName when provided', () => {
+    const resultWithJd: MatchResultType = {
+      ...normalFixture,
+      fileName: 'alex_cv.pdf',
+      jdFileName: 'software_engineer_jd.pdf',
+    };
+    render(<MatchResult loading={false} error={null} result={resultWithJd} />);
+
+    expect(screen.getByTestId('jd-filename').textContent).toContain('software_engineer_jd.pdf');
+    expect(screen.getByRole('heading', { level: 2 }).textContent).toContain('alex_cv.pdf ↔ software_engineer_jd.pdf');
+  });
 });

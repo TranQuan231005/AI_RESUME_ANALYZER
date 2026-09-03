@@ -54,10 +54,10 @@ public class AnalysisService {
         AnalysisResult result = new AnalysisResult();
         result.setUser(user);
         result.setAnalysisType("RESUME");
-        result.setFileName(aiResult.hasNonNull("fileName") ? aiResult.get("fileName").asText() : (file.getOriginalFilename() != null ? file.getOriginalFilename() : "resume.pdf"));
-        result.setCandidateName(aiResult.hasNonNull("candidateName") ? aiResult.get("candidateName").asText() : null);
-        result.setCandidateEmail(aiResult.hasNonNull("candidateEmail") ? aiResult.get("candidateEmail").asText() : null);
-        result.setPredictedField(aiResult.hasNonNull("predictedField") ? aiResult.get("predictedField").asText() : "Unknown");
+        result.setFileName(truncate(aiResult.hasNonNull("fileName") ? aiResult.get("fileName").asText() : (file.getOriginalFilename() != null ? file.getOriginalFilename() : "resume.pdf"), 255));
+        result.setCandidateName(truncate(aiResult.hasNonNull("candidateName") ? aiResult.get("candidateName").asText() : null, 160));
+        result.setCandidateEmail(truncate(aiResult.hasNonNull("candidateEmail") ? aiResult.get("candidateEmail").asText() : null, 190));
+        result.setPredictedField(truncate(aiResult.hasNonNull("predictedField") ? aiResult.get("predictedField").asText() : "Unknown", 60));
         result.setResumeScore(aiResult.hasNonNull("resumeScore") ? aiResult.get("resumeScore").asInt() : 0);
         result.setMatchScore(null);
         result.setTargetRole(null);
@@ -65,8 +65,8 @@ public class AnalysisService {
 
         JsonNode aiMetadata = aiResult.get("ai");
         if (aiMetadata != null) {
-            result.setAiProvider(aiMetadata.hasNonNull("provider") ? aiMetadata.get("provider").asText() : "RULE_BASED");
-            result.setAiModel(aiMetadata.hasNonNull("model") ? aiMetadata.get("model").asText() : "deterministic-v1");
+            result.setAiProvider(truncate(aiMetadata.hasNonNull("provider") ? aiMetadata.get("provider").asText() : "RULE_BASED", 40));
+            result.setAiModel(truncate(aiMetadata.hasNonNull("model") ? aiMetadata.get("model").asText() : "deterministic-v1", 80));
             result.setUsedFallback(aiMetadata.hasNonNull("usedFallback") && aiMetadata.get("usedFallback").asBoolean());
             result.setProcessingMs(aiMetadata.hasNonNull("processingMs") ? aiMetadata.get("processingMs").asLong() : 0L);
         } else {
@@ -85,38 +85,50 @@ public class AnalysisService {
     }
 
     @Transactional
-    public PersistedMatchResponse analyzeMatch(Long userId, MultipartFile file, String jobDescription, String targetRole) {
+    public PersistedMatchResponse analyzeMatch(Long userId, MultipartFile file, MultipartFile jdFile, String jobDescription, String targetRole) {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("Resume file is required.");
         }
         if (file.getSize() > 5 * 1024 * 1024) {
             throw new IllegalArgumentException("File size exceeds 5MB limit.");
         }
-        if (jobDescription == null || jobDescription.trim().length() < 50) {
+
+        boolean hasJdFile = jdFile != null && !jdFile.isEmpty();
+        boolean hasJdText = jobDescription != null && !jobDescription.trim().isEmpty();
+
+        if (!hasJdFile && !hasJdText) {
+            throw new IllegalArgumentException("Job description text (min 50 characters) or valid JD PDF file is required.");
+        }
+
+        if (hasJdFile && jdFile.getSize() > 5 * 1024 * 1024) {
+            throw new IllegalArgumentException("Job description file size exceeds 5MB limit.");
+        }
+
+        if (!hasJdFile && jobDescription.trim().length() < 50) {
             throw new IllegalArgumentException("Job description must be at least 50 characters.");
         }
 
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
 
-        JsonNode aiResult = aiServiceClient.analyzeMatch(file, jobDescription, targetRole);
+        JsonNode aiResult = aiServiceClient.analyzeMatch(file, jdFile, jobDescription, targetRole);
 
         AnalysisResult result = new AnalysisResult();
         result.setUser(user);
         result.setAnalysisType("MATCH");
-        result.setFileName(aiResult.hasNonNull("fileName") ? aiResult.get("fileName").asText() : (file.getOriginalFilename() != null ? file.getOriginalFilename() : "resume.pdf"));
+        result.setFileName(truncate(aiResult.hasNonNull("fileName") ? aiResult.get("fileName").asText() : (file.getOriginalFilename() != null ? file.getOriginalFilename() : "resume.pdf"), 255));
         result.setCandidateName(null);
         result.setCandidateEmail(null);
         result.setPredictedField(null);
         result.setResumeScore(null);
         result.setMatchScore(aiResult.hasNonNull("matchScore") ? aiResult.get("matchScore").asInt() : 0);
-        result.setTargetRole(aiResult.hasNonNull("targetRole") ? aiResult.get("targetRole").asText() : (targetRole != null ? targetRole : "Unspecified Role"));
+        result.setTargetRole(truncate(aiResult.hasNonNull("targetRole") ? aiResult.get("targetRole").asText() : (targetRole != null ? targetRole : "Unspecified Role"), 160));
         result.setResultJson(aiResult);
 
         JsonNode aiMetadata = aiResult.get("ai");
         if (aiMetadata != null) {
-            result.setAiProvider(aiMetadata.hasNonNull("provider") ? aiMetadata.get("provider").asText() : "RULE_BASED");
-            result.setAiModel(aiMetadata.hasNonNull("model") ? aiMetadata.get("model").asText() : "deterministic-v1");
+            result.setAiProvider(truncate(aiMetadata.hasNonNull("provider") ? aiMetadata.get("provider").asText() : "RULE_BASED", 40));
+            result.setAiModel(truncate(aiMetadata.hasNonNull("model") ? aiMetadata.get("model").asText() : "deterministic-v1", 80));
             result.setUsedFallback(aiMetadata.hasNonNull("usedFallback") && aiMetadata.get("usedFallback").asBoolean());
             result.setProcessingMs(aiMetadata.hasNonNull("processingMs") ? aiMetadata.get("processingMs").asLong() : 0L);
         } else {
@@ -132,6 +144,11 @@ public class AnalysisService {
             saved.getCreatedAt() != null ? saved.getCreatedAt() : Instant.now(),
             saved.getResultJson()
         );
+    }
+
+    @Transactional
+    public PersistedMatchResponse analyzeMatch(Long userId, MultipartFile file, String jobDescription, String targetRole) {
+        return analyzeMatch(userId, file, null, jobDescription, targetRole);
     }
 
     @Transactional
@@ -200,4 +217,13 @@ public class AnalysisService {
         }
         return objectMapper.createObjectNode().put("unavailable", true);
     }
+
+    private String truncate(String val, int maxLen) {
+        if (val == null) {
+            return null;
+        }
+        String trimmed = val.trim();
+        return trimmed.length() <= maxLen ? trimmed : trimmed.substring(0, maxLen);
+    }
 }
+

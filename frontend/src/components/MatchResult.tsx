@@ -46,8 +46,13 @@ export const MatchResult: React.FC<MatchResultProps> = ({
       )}
 
       <header>
-        <h2>{fileName}</h2>
+        <h2>{fileName} {result.jdFileName ? `↔ ${result.jdFileName}` : ''}</h2>
         <p>Target Role: {targetRole}</p>
+        {result.jdFileName && (
+          <p data-testid="jd-filename">
+            Job Description Document: <strong>{result.jdFileName}</strong>
+          </p>
+        )}
       </header>
 
       <h3>Match Score: {matchScore}/100</h3>
