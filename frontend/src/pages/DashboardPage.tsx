@@ -1,44 +1,46 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import {
+  ArrowRight,
+  ChartDonut,
+  ClockCounterClockwise,
+  FileText,
+  Target,
+  TextAlignLeft,
+} from '@phosphor-icons/react';
+import { useNavigate } from 'react-router-dom';
+import { getHistory, matchJobDescription, uploadResume } from '../api/analysis';
+import { Alert, Badge, Button, EmptyState, FileDropzone, LoadingSkeleton, PageHeader, SegmentedControl } from '../components/ui';
 import { useAuth } from '../context/AuthContext';
-import { uploadResume, matchJobDescription, getHistory } from '../api/analysis';
 import type { PagedAnalysisSummary } from '../types/analysis';
+import styles from './DashboardPage.module.css';
+
+type DashboardTab = 'resume' | 'match' | 'history';
+type JdInputMode = 'pdf' | 'text';
+
+const isPdf = (file: File) => file.type === 'application/pdf';
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
 export const DashboardPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'resume' | 'match' | 'history'>('resume');
-
-  // Resume analysis state
+  const [activeTab, setActiveTab] = useState<DashboardTab>('resume');
   const [resumeFile, setResumeFile] = useState<File | null>(null);
-
-  // Match analysis state
   const [matchFile, setMatchFile] = useState<File | null>(null);
   const [jdFile, setJdFile] = useState<File | null>(null);
-  const [jdInputMode, setJdInputMode] = useState<'pdf' | 'text'>('pdf');
-  const [jobDescription, setJobDescription] = useState<string>('');
-  const [targetRole, setTargetRole] = useState<string>('');
-
-  // History state
+  const [jdInputMode, setJdInputMode] = useState<JdInputMode>('pdf');
+  const [jobDescription, setJobDescription] = useState('');
+  const [targetRole, setTargetRole] = useState('');
   const [history, setHistory] = useState<PagedAnalysisSummary | null>(null);
-  const [historyLoading, setHistoryLoading] = useState<boolean>(false);
-
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
   const navigate = useNavigate();
   const { token, logout } = useAuth();
-
-  useEffect(() => {
-    if (activeTab === 'history' && token) {
-      loadHistory();
-    }
-  }, [activeTab, token]);
 
   const loadHistory = async () => {
     if (!token) return;
     setHistoryLoading(true);
+    setError(null);
     try {
-      const data = await getHistory(token, 0, 10);
-      setHistory(data);
+      setHistory(await getHistory(token, 0, 10));
     } catch (err: any) {
       setError(err?.message || 'Failed to load history.');
     } finally {
@@ -46,67 +48,37 @@ export const DashboardPage: React.FC = () => {
     }
   };
 
-  const handleResumeFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const selectedFile = e.target.files[0];
-      if (selectedFile.type !== 'application/pdf') {
-        setError('Please select a valid PDF file.');
-        setResumeFile(null);
-        return;
-      }
-      setResumeFile(selectedFile);
-      setError(null);
-    }
-  };
+  useEffect(() => {
+    if (activeTab === 'history' && token) void loadHistory();
+  }, [activeTab, token]);
 
-  const handleMatchFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const selectedFile = e.target.files[0];
-      if (selectedFile.type !== 'application/pdf') {
-        setError('Please select a valid PDF file for Candidate Resume.');
-        setMatchFile(null);
-        return;
-      }
-      setMatchFile(selectedFile);
-      setError(null);
-    }
-  };
-
-  const handleJdFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const selectedFile = e.target.files[0];
-      if (selectedFile.type !== 'application/pdf') {
-        setError('Please select a valid PDF file for Job Description.');
-        setJdFile(null);
-        return;
-      }
-      setJdFile(selectedFile);
-      setError(null);
-    }
-  };
-
-  const handleResumeSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!resumeFile) {
-      setError('Please select a PDF file before submitting.');
+  const choosePdf = (file: File | null, setter: React.Dispatch<React.SetStateAction<File | null>>, message: string) => {
+    if (file && !isPdf(file)) {
+      setter(null);
+      setError(message);
       return;
     }
-
-    if (!token) {
-      setError('Authentication token is missing. Please log in again.');
+    if (file && file.size > MAX_FILE_SIZE) {
+      setter(null);
+      setError('PDF files must be 5 MB or smaller.');
       return;
     }
+    setter(file);
+    setError(null);
+  };
 
+  const handleResumeSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!resumeFile) return setError('Please select a PDF file before submitting.');
+    if (!token) return setError('Authentication token is missing. Please log in again.');
     setIsLoading(true);
     setError(null);
-
     try {
       const response = await uploadResume(resumeFile, token);
       navigate('/resume/result', { state: { result: (response as any).result || response } });
     } catch (err: any) {
       if (err?.status === 401) {
-        if (logout) logout();
+        logout();
         navigate('/login');
         return;
       }
@@ -116,46 +88,28 @@ export const DashboardPage: React.FC = () => {
     }
   };
 
-  const isJdValid = jdInputMode === 'pdf' ? !!jdFile : jobDescription.trim().length >= 50;
+  const isJdValid = jdInputMode === 'pdf' ? Boolean(jdFile) : jobDescription.trim().length >= 50;
 
-  const handleMatchSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!matchFile) {
-      setError('Please select a Candidate Resume PDF file before submitting.');
-      return;
-    }
-
-    if (jdInputMode === 'pdf' && !jdFile) {
-      setError('Please select a Job Description PDF file.');
-      return;
-    }
-
-    if (jdInputMode === 'text' && (!jobDescription || jobDescription.trim().length < 50)) {
-      setError('Job description must be at least 50 characters.');
-      return;
-    }
-
-    if (!token) {
-      setError('Authentication token is missing. Please log in again.');
-      return;
-    }
-
+  const handleMatchSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!matchFile) return setError('Please select a Candidate Resume PDF file before submitting.');
+    if (jdInputMode === 'pdf' && !jdFile) return setError('Please select a Job Description PDF file.');
+    if (jdInputMode === 'text' && jobDescription.trim().length < 50) return setError('Job description must be at least 50 characters.');
+    if (!token) return setError('Authentication token is missing. Please log in again.');
     setIsLoading(true);
     setError(null);
-
     try {
       const response = await matchJobDescription(
         matchFile,
         jdInputMode === 'text' ? jobDescription : undefined,
         targetRole.trim() || undefined,
         token,
-        jdInputMode === 'pdf' ? jdFile : null
+        jdInputMode === 'pdf' ? jdFile : null,
       );
       navigate('/match/result', { state: { result: (response as any).result || response } });
     } catch (err: any) {
       if (err?.status === 401) {
-        if (logout) logout();
+        logout();
         navigate('/login');
         return;
       }
@@ -165,195 +119,136 @@ export const DashboardPage: React.FC = () => {
     }
   };
 
+  const selectTab = (tab: DashboardTab) => {
+    setActiveTab(tab);
+    setError(null);
+  };
+
   return (
-    <section>
-      <h1>Resume dashboard</h1>
-      <p>Analyze a resume and review your previous results.</p>
-      <Link to="/resume/result">View latest result</Link>
+    <section className={styles.page}>
+      <PageHeader eyebrow="Analysis workspace" title="Resume dashboard" description="Score a resume, compare it with a role, or revisit your previous analyses." />
 
-      <nav style={{ display: 'flex', gap: '0.75rem', margin: '1.25rem 0' }}>
-        <button
-          type="button"
-          className={activeTab === 'resume' ? 'input-mode-btn active' : 'input-mode-btn'}
-          onClick={() => { setActiveTab('resume'); setError(null); }}
-        >
-          📊 Resume Scoring
-        </button>
-        <button
-          type="button"
-          className={activeTab === 'match' ? 'input-mode-btn active' : 'input-mode-btn'}
-          onClick={() => { setActiveTab('match'); setError(null); }}
-        >
-          🎯 Job Match & ATS
-        </button>
-        <button
-          type="button"
-          className={activeTab === 'history' ? 'input-mode-btn active' : 'input-mode-btn'}
-          onClick={() => { setActiveTab('history'); setError(null); }}
-        >
-          🕒 Analysis History
-        </button>
-      </nav>
+      <div className={styles.toolbar}>
+        <SegmentedControl
+          label="Analysis workspace"
+          value={activeTab}
+          onChange={selectTab}
+          options={[
+            { value: 'resume', label: 'Resume Scoring', icon: <ChartDonut size={18} weight="bold" aria-hidden="true" /> },
+            { value: 'match', label: 'Job Match & ATS', icon: <Target size={18} weight="bold" aria-hidden="true" /> },
+            { value: 'history', label: 'Analysis History', icon: <ClockCounterClockwise size={18} weight="bold" aria-hidden="true" /> },
+          ]}
+        />
+      </div>
 
-      {error && <p role="alert" style={{ color: 'red' }}>{error}</p>}
+      {error && <Alert tone="error">{error}</Alert>}
 
       {activeTab === 'resume' && (
-        <form onSubmit={handleResumeSubmit}>
-          <div>
-            <label htmlFor="resume-file">Upload Resume (PDF)</label>
-            <input
+        <form className={styles.workspace} onSubmit={handleResumeSubmit}>
+          <div className={styles.panel}>
+            <div className={styles.panelHeader}>
+              <h2>Start with your resume.</h2>
+              <p>Upload an English, text-based PDF to receive a structured quality score and focused recommendations.</p>
+            </div>
+            <FileDropzone
               id="resume-file"
-              type="file"
-              accept="application/pdf"
-              onChange={handleResumeFileChange}
+              label="Upload Resume (PDF)"
+              file={resumeFile}
               disabled={isLoading}
+              helperText="Drop a PDF here or click to browse. Maximum size: 5 MB."
+              onChange={(file) => choosePdf(file, setResumeFile, 'Please select a valid PDF file.')}
             />
+            <div className={styles.actionRow}>
+              <Button type="submit" disabled={isLoading || !resumeFile} icon={<ArrowRight size={18} weight="bold" aria-hidden="true" />}>
+                {isLoading ? 'Uploading...' : 'Upload Resume'}
+              </Button>
+            </div>
           </div>
-
-          <button type="submit" disabled={isLoading || !resumeFile}>
-            {isLoading ? 'Uploading...' : 'Upload Resume'}
-          </button>
+          <aside className={styles.aside}>
+            <FileText className={styles.asideIcon} size={34} weight="duotone" aria-hidden="true" />
+            <div>
+              <h3>Your document stays private.</h3>
+              <p>The original resume is processed in memory and is not stored after analysis.</p>
+            </div>
+          </aside>
         </form>
       )}
 
       {activeTab === 'match' && (
-        <form onSubmit={handleMatchSubmit} data-testid="match-form">
-          <div className="match-grid">
-            {/* Card 1: Resume */}
-            <div className="upload-card">
-              <div className="upload-card-header">
-                <h3>📄 1. Candidate Resume</h3>
-                <span className="upload-badge">Required</span>
-              </div>
-              <label htmlFor="match-resume-file">Upload Candidate CV (PDF)</label>
-              <input
+        <form className={styles.panel} onSubmit={handleMatchSubmit} data-testid="match-form">
+          <div className={styles.panelHeader}>
+            <h2>Compare experience with opportunity.</h2>
+            <p>Bring a resume and a job description together to reveal matched skills, gaps, and ATS keywords.</p>
+          </div>
+          <div className={styles.matchGrid}>
+            <section className={styles.matchColumn}>
+              <div className={styles.columnHeader}><h3>Candidate resume</h3><Badge tone="accent">Required</Badge></div>
+              <FileDropzone
                 id="match-resume-file"
-                type="file"
-                accept="application/pdf"
-                onChange={handleMatchFileChange}
+                label="Upload Candidate CV (PDF)"
+                file={matchFile}
                 disabled={isLoading}
+                helperText="English PDF, maximum size 5 MB."
+                onChange={(file) => choosePdf(file, setMatchFile, 'Please select a valid PDF file for Candidate Resume.')}
               />
-              {matchFile ? (
-                <div className="file-selected-badge">
-                  <span>✓ {matchFile.name} ({(matchFile.size / 1024).toFixed(1)} KB)</span>
-                  <button
-                    type="button"
-                    className="file-clear-btn"
-                    onClick={() => setMatchFile(null)}
-                    title="Remove file"
-                  >
-                    ✕
-                  </button>
-                </div>
-              ) : (
-                <small style={{ color: 'var(--text-muted)' }}>Max file size: 5 MB (PDF format)</small>
-              )}
-            </div>
+            </section>
 
-            {/* Card 2: Job Description */}
-            <div className="upload-card">
-              <div className="upload-card-header">
-                <h3>🎯 2. Job Description</h3>
-                <span className="upload-badge">Required</span>
-              </div>
-
-              <div className="input-mode-toggle">
-                <button
-                  type="button"
-                  data-testid="tab-jd-pdf"
-                  className={jdInputMode === 'pdf' ? 'input-mode-btn active' : 'input-mode-btn'}
-                  onClick={() => setJdInputMode('pdf')}
-                >
-                  📁 Upload JD (PDF)
-                </button>
-                <button
-                  type="button"
-                  data-testid="tab-jd-text"
-                  className={jdInputMode === 'text' ? 'input-mode-btn active' : 'input-mode-btn'}
-                  onClick={() => setJdInputMode('text')}
-                >
-                  ✍️ Paste JD Text
-                </button>
-              </div>
-
+            <section className={styles.matchColumn}>
+              <div className={styles.columnHeader}><h3>Job description</h3><Badge tone="accent">Required</Badge></div>
+              <SegmentedControl
+                label="Job description input mode"
+                value={jdInputMode}
+                onChange={setJdInputMode}
+                options={[
+                  { value: 'pdf', label: 'Upload JD (PDF)', icon: <FileText size={17} weight="bold" aria-hidden="true" />, testId: 'tab-jd-pdf' },
+                  { value: 'text', label: 'Paste JD Text', icon: <TextAlignLeft size={17} weight="bold" aria-hidden="true" />, testId: 'tab-jd-text' },
+                ]}
+              />
               {jdInputMode === 'pdf' ? (
-                <div>
-                  <label htmlFor="match-jd-file">Upload Target Job Description (PDF)</label>
-                  <input
-                    id="match-jd-file"
-                    type="file"
-                    accept="application/pdf"
-                    onChange={handleJdFileChange}
-                    disabled={isLoading}
-                  />
-                  {jdFile ? (
-                    <div className="file-selected-badge" style={{ marginTop: '0.5rem' }}>
-                      <span>✓ {jdFile.name} ({(jdFile.size / 1024).toFixed(1)} KB)</span>
-                      <button
-                        type="button"
-                        className="file-clear-btn"
-                        onClick={() => setJdFile(null)}
-                        title="Remove file"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ) : (
-                    <small style={{ color: 'var(--text-muted)' }}>Upload any PDF job posting (Max: 5 MB)</small>
-                  )}
-                </div>
+                <FileDropzone
+                  id="match-jd-file"
+                  label="Upload Target Job Description (PDF)"
+                  file={jdFile}
+                  disabled={isLoading}
+                  helperText="Any text-based job posting PDF, maximum size 5 MB."
+                  onChange={(file) => choosePdf(file, setJdFile, 'Please select a valid PDF file for Job Description.')}
+                />
               ) : (
-                <div>
+                <div className={styles.field}>
                   <label htmlFor="job-description">Job Description Text (min 50 chars)</label>
-                  <textarea
-                    id="job-description"
-                    rows={5}
-                    placeholder="Paste the target job description or requirements here..."
-                    value={jobDescription}
-                    onChange={(e) => setJobDescription(e.target.value)}
-                    disabled={isLoading}
-                  />
-                  <span
-                    className="char-counter"
-                    style={{ color: jobDescription.trim().length >= 50 ? 'var(--accent-emerald)' : 'var(--text-muted)' }}
-                  >
-                    {jobDescription.trim().length >= 50 ? '✓ ' : ''}{jobDescription.trim().length} / 50 characters min
+                  <textarea id="job-description" rows={7} placeholder="Paste the target job description or requirements here..." value={jobDescription} onChange={(event) => setJobDescription(event.target.value)} disabled={isLoading} />
+                  <span className={`${styles.counter} ${jobDescription.trim().length >= 50 ? styles.counterValid : ''}`}>
+                    {jobDescription.trim().length} / 50 characters minimum
                   </span>
                 </div>
               )}
-            </div>
+            </section>
           </div>
-
-          <div style={{ marginBottom: '1.5rem', maxWidth: '500px' }}>
+          <div className={`${styles.field} ${styles.targetRole}`}>
             <label htmlFor="target-role">Target Role (Optional title override)</label>
-            <input
-              id="target-role"
-              type="text"
-              placeholder="e.g. Senior Backend Engineer"
-              value={targetRole}
-              onChange={(e) => setTargetRole(e.target.value)}
-              disabled={isLoading}
-            />
+            <input id="target-role" type="text" placeholder="e.g. Senior Backend Engineer" value={targetRole} onChange={(event) => setTargetRole(event.target.value)} disabled={isLoading} />
           </div>
-
-          <button type="submit" disabled={isLoading || !matchFile || !isJdValid}>
-            {isLoading ? 'Running Match & ATS Analysis...' : '⚡ Run Job Match & ATS Analysis'}
-          </button>
+          <div className={styles.actionRow}>
+            <Button type="submit" disabled={isLoading || !matchFile || !isJdValid} icon={<Target size={18} weight="bold" aria-hidden="true" />}>
+              {isLoading ? 'Running Match & ATS Analysis...' : 'Run Job Match & ATS Analysis'}
+            </Button>
+          </div>
         </form>
       )}
 
       {activeTab === 'history' && (
-        <section data-testid="history-tab">
-          <h2>Your Analysis History</h2>
-          {historyLoading && <p role="status">Loading history...</p>}
-          {history && history.items.length === 0 && <p>No previous analyses found.</p>}
-          {history && history.items.length > 0 && (
-            <ul>
+        <section className={styles.panel} data-testid="history-tab">
+          <div className={styles.panelHeader}><h2>Your Analysis History</h2><p>A concise record of the latest resume and job-match analyses.</p></div>
+          {historyLoading && <LoadingSkeleton label="Loading history..." />}
+          {!historyLoading && history && history.items.length === 0 && <EmptyState title="No previous analyses found." description="Run your first resume score or job match to build a history." />}
+          {!historyLoading && history && history.items.length > 0 && (
+            <ul className={styles.history}>
               {history.items.map((item) => (
-                <li key={item.id} style={{ margin: '0.5rem 0' }}>
-                  <strong>[{item.analysisType}]</strong> {item.fileName} &mdash;{' '}
-                  {item.analysisType === 'RESUME' ? `Score: ${item.resumeScore}/100` : `Match: ${item.matchScore}/100`}
-                  {' '}({new Date(item.createdAt).toLocaleDateString()})
+                <li className={styles.historyItem} key={item.id}>
+                  <Badge tone={item.analysisType === 'RESUME' ? 'accent' : 'neutral'}>{item.analysisType}</Badge>
+                  <span className={styles.historyName}><strong>{item.fileName}</strong><span>{item.aiProvider}{item.usedFallback ? ' / fallback' : ''}</span></span>
+                  <span className={styles.historyScore}>{item.analysisType === 'RESUME' ? `Score ${item.resumeScore}/100` : `Match ${item.matchScore}/100`}</span>
+                  <time className={styles.historyDate}>{new Date(item.createdAt).toLocaleDateString()}</time>
                 </li>
               ))}
             </ul>

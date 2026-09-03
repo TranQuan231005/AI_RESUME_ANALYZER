@@ -1,0 +1,46 @@
+.shell { min-height: 100dvh; }
+.topbar {
+  height: 68px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0 max(1.25rem, calc((100vw - var(--content)) / 2));
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  border-bottom: 1px solid var(--line);
+  background: color-mix(in srgb, var(--canvas) 92%, transparent);
+  backdrop-filter: blur(16px);
+}
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  text-decoration: none;
+}
+.mark {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-small);
+  background: var(--accent);
+  color: white;
+}
+.account { display: flex; align-items: center; gap: 0.75rem; }
+.identity { display: grid; text-align: right; }
+.identity strong { font-size: 0.82rem; line-height: 1.2; }
+.identity span { color: var(--ink-muted); font-family: var(--font-mono); font-size: 0.68rem; }
+.main { width: min(100%, var(--content)); margin: 0 auto; padding: 4rem 1.25rem 5rem; }
+
+@media (max-width: 640px) {
+  .topbar { padding-inline: 1rem; }
+  .brandText { display: none; }
+  .identity { display: none; }
+  .main { padding-top: 2.5rem; }
+}

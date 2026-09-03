@@ -1,7 +1,10 @@
 import React from 'react';
+import { ArrowLeft } from '@phosphor-icons/react';
 import { Link, useLocation } from 'react-router-dom';
 import { ResumeResult } from '../components/ResumeResult';
+import { EmptyState, PageHeader } from '../components/ui';
 import type { ResumeAnalysisResult } from '../types/analysis';
+import styles from './ResultPage.module.css';
 
 interface ResumeResultRouteState {
   result?: ResumeAnalysisResult;
@@ -50,19 +53,18 @@ export const ResumeResultPage: React.FC = () => {
 
   if (!state.loading && !error && !result) {
     return (
-      <section>
-        <h1>Resume analysis result</h1>
-        <p>No analysis result is available.</p>
-        <Link to="/dashboard">Return to dashboard</Link>
+      <section className={styles.page}>
+        <PageHeader title="Resume analysis result" description="Review the quality signals found in your resume." />
+        <EmptyState title="No analysis result is available." description="Upload a resume from your dashboard to generate a new result." action={<Link className={styles.backLink} to="/dashboard"><ArrowLeft size={17} weight="bold" aria-hidden="true" />Return to dashboard</Link>} />
       </section>
     );
   }
 
   return (
-    <section>
-      <h1>Resume analysis result</h1>
+    <section className={styles.page}>
+      <PageHeader title="Resume analysis result" description="Review the quality signals found in your resume." />
       <ResumeResult loading={state.loading === true} error={error} result={result} />
-      <Link to="/dashboard">Return to dashboard</Link>
+      <Link className={styles.backLink} to="/dashboard"><ArrowLeft size={17} weight="bold" aria-hidden="true" />Return to dashboard</Link>
     </section>
   );
 };

@@ -1,0 +1,4 @@
+.page { display: grid; gap: 1.5rem; }
+.standalone { width: min(calc(100% - 2rem), 860px); min-height: 100dvh; align-content: center; margin: 0 auto; }
+.backLink { width: fit-content; display: inline-flex; align-items: center; gap: 0.45rem; color: var(--ink-soft); font-size: 0.85rem; font-weight: 700; text-decoration: none; }
+.backLink:hover { color: var(--accent); }
