@@ -20,11 +20,11 @@ def _multipart_properties(spec: dict, path: str) -> tuple[dict, list[str]]:
 def test_analyze_match_openapi_preserves_frozen_camel_case_form_fields():
     properties, required = _multipart_properties(app.openapi(), "/api/analyze-match")
 
-    assert set(properties) == {"file", "jobDescription", "targetRole"}
-    assert set(required) == {"file", "jobDescription"}
-    assert properties["jobDescription"]["minLength"] == 50
+    assert set(properties) == {"file", "jdFile", "jobDescription", "targetRole"}
+    assert set(required) == {"file"}
     assert "job_description" not in properties
     assert "target_role" not in properties
+    assert "jd_file" not in properties
 
 
 def test_internal_and_public_openapi_use_the_same_frozen_match_field_names():
@@ -44,8 +44,8 @@ def test_internal_and_public_openapi_use_the_same_frozen_match_field_names():
         "/api/analyses/match",
     )
 
-    frozen_fields = {"file", "jobDescription", "targetRole"}
+    frozen_fields = {"file", "jdFile", "jobDescription", "targetRole"}
     assert set(internal_properties) == frozen_fields
     assert set(public_properties) == frozen_fields
-    assert set(internal_required) == {"file", "jobDescription"}
-    assert set(public_required) == {"file", "jobDescription"}
+    assert set(internal_required) == {"file"}
+    assert set(public_required) == {"file"}
