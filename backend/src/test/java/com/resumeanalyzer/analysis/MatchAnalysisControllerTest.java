@@ -73,7 +73,7 @@ class MatchAnalysisControllerTest {
             resultJson
         );
 
-        when(service.analyzeMatch(eq(1L), any(), eq("We are looking for a Senior Java Engineer with 5+ years experience in Spring Boot, MySQL, Docker, and REST APIs."), eq("Senior Java Engineer")))
+        when(service.analyzeMatch(eq(1L), any(), eq(null), eq("We are looking for a Senior Java Engineer with 5+ years experience in Spring Boot, MySQL, Docker, and REST APIs."), eq("Senior Java Engineer")))
             .thenReturn(response);
 
         mockMvc.perform(multipart("/api/analyses/match")
