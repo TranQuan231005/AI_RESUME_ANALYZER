@@ -64,6 +64,17 @@ describe('DashboardPage', () => {
     expect(screen.getByRole('button', { name: /upload resume/i })).toBeDisabled();
   });
 
+  test('rejects a PDF larger than 5 MB', () => {
+    renderDashboard();
+    const input = screen.getByLabelText(/upload resume \(pdf\)/i);
+    const oversizedPdf = new File([new Uint8Array(5 * 1024 * 1024 + 1)], 'large.pdf', { type: 'application/pdf' });
+
+    fireEvent.change(input, { target: { files: [oversizedPdf] } });
+
+    expect(screen.getByRole('alert')).toHaveTextContent('PDF files must be 5 MB or smaller.');
+    expect(screen.getByRole('button', { name: /upload resume/i })).toBeDisabled();
+  });
+
   test('enables submit button when valid PDF is selected', () => {
     renderDashboard();
     const input = screen.getByLabelText(/upload resume \(pdf\)/i);
@@ -72,6 +83,44 @@ describe('DashboardPage', () => {
     fireEvent.change(input, { target: { files: [pdfFile] } });
 
     expect(screen.getByRole('button', { name: /upload resume/i })).toBeEnabled();
+  });
+
+  test('clears a selected resume from the dropzone', () => {
+    renderDashboard();
+    const input = screen.getByLabelText(/upload resume \(pdf\)/i);
+    const pdfFile = new File(['dummy pdf'], 'resume.pdf', { type: 'application/pdf' });
+
+    fireEvent.change(input, { target: { files: [pdfFile] } });
+    fireEvent.click(screen.getByRole('button', { name: /remove resume\.pdf/i }));
+
+    expect(screen.getByRole('button', { name: /upload resume/i })).toBeDisabled();
+    expect(screen.queryByText('resume.pdf')).toBeNull();
+  });
+
+  test('supports arrow-key navigation between workspace segments', () => {
+    renderDashboard();
+    const resumeTab = screen.getByRole('button', { name: /resume scoring/i });
+
+    resumeTab.focus();
+    fireEvent.keyDown(resumeTab, { key: 'ArrowRight' });
+
+    expect(screen.getByRole('button', { name: /^job match & ats$/i })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByLabelText(/upload candidate cv \(pdf\)/i)).toBeInTheDocument();
+  });
+
+  test('renders a dedicated empty state when history has no items', async () => {
+    jest.mocked(analysisApi.getHistory).mockResolvedValueOnce({
+      items: [],
+      page: 0,
+      size: 10,
+      totalItems: 0,
+      totalPages: 0,
+    });
+    renderDashboard();
+
+    fireEvent.click(screen.getByRole('button', { name: /analysis history/i }));
+
+    expect(await screen.findByText('No previous analyses found.')).toBeInTheDocument();
   });
 
   test('handles successful resume upload and navigates to result page', async () => {

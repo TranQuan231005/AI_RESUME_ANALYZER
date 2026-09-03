@@ -1,5 +1,8 @@
 import React from 'react';
+import { CheckCircle, Key, Lightbulb, TrendDown, TrendUp, WarningCircle } from '@phosphor-icons/react';
 import type { MatchResult as MatchResultType } from '../types/analysis';
+import { Alert, Badge, LoadingSkeleton, ScoreSummary } from './ui';
+import styles from './Result.module.css';
 
 interface MatchResultProps {
   loading: boolean;
@@ -13,11 +16,11 @@ export const MatchResult: React.FC<MatchResultProps> = ({
   result,
 }) => {
   if (loading) {
-    return <p role="status" data-testid="loading-state">Matching Resume with Job Description...</p>;
+    return <LoadingSkeleton label="Matching Resume with Job Description..." testId="loading-state" />;
   }
 
   if (error) {
-    return <p role="alert" data-testid="error-state">Error: {error}</p>;
+    return <Alert tone="error" testId="error-state">Error: {error}</Alert>;
   }
 
   if (!result) {
@@ -38,67 +41,70 @@ export const MatchResult: React.FC<MatchResultProps> = ({
   } = result;
 
   return (
-    <article data-testid="match-result">
+    <article className={styles.result} data-testid="match-result">
       {ai?.usedFallback && (
-        <strong data-testid="fallback-badge">
-          Fallback Mode
-        </strong>
+        <Alert tone="warning">
+          <div className={styles.fallback}><strong data-testid="fallback-badge">Fallback Mode</strong><p>The local rule-based engine produced this result because the AI provider was unavailable.</p></div>
+        </Alert>
       )}
 
-      <header>
-        <h2>{fileName} {result.jdFileName ? `↔ ${result.jdFileName}` : ''}</h2>
-        <p>Target Role: {targetRole}</p>
+      <header className={styles.documentHeader}>
+        <div>
+          <h2>{fileName} {result.jdFileName ? `↔ ${result.jdFileName}` : ''}</h2>
+          <p>Target Role: {targetRole}</p>
+        </div>
+        <div className={styles.meta}><Badge tone="accent">Job match</Badge>
         {result.jdFileName && (
           <p data-testid="jd-filename">
             Job Description Document: <strong>{result.jdFileName}</strong>
           </p>
-        )}
+        )}</div>
       </header>
 
-      <h3>Match Score: {matchScore}/100</h3>
-      <progress aria-label="Job description match score" value={matchScore} max={100} />
+      <ScoreSummary score={matchScore} label="Match Score" hint="A comparison of resume evidence, required skills, and ATS language." />
 
-      <section data-testid="matched-skills">
-        <h3>Matched Skills ({matchedSkills.length})</h3>
+      <div className={styles.contentGrid}>
+      <section className={styles.contentSection} data-testid="matched-skills">
+        <h3><CheckCircle size={19} weight="bold" aria-hidden="true" />Matched Skills ({matchedSkills.length})</h3>
         {matchedSkills.length === 0 ? (
           <p>No matching skills found.</p>
         ) : (
-          <ul>
+          <ul className={styles.tags}>
             {matchedSkills.map((skill, index) => (
-              <li key={`matched-${skill}-${index}`}>{skill}</li>
+              <li className={`${styles.tag} ${styles.tagSuccess}`} key={`matched-${skill}-${index}`}>{skill}</li>
             ))}
           </ul>
         )}
       </section>
 
-      <section data-testid="missing-skills">
-        <h3>Missing Skills ({missingSkills.length})</h3>
+      <section className={styles.contentSection} data-testid="missing-skills">
+        <h3><WarningCircle size={19} weight="bold" aria-hidden="true" />Missing Skills ({missingSkills.length})</h3>
         {missingSkills.length === 0 ? (
           <p>No missing skills identified.</p>
         ) : (
-          <ul>
+          <ul className={styles.tags}>
             {missingSkills.map((skill, index) => (
-              <li key={`missing-${skill}-${index}`}>{skill}</li>
+              <li className={`${styles.tag} ${styles.tagDanger}`} key={`missing-${skill}-${index}`}>{skill}</li>
             ))}
           </ul>
         )}
       </section>
 
       {atsKeywords && atsKeywords.length > 0 && (
-        <section data-testid="ats-keywords">
-          <h3>ATS Keywords</h3>
-          <ul>
+        <section className={`${styles.contentSection} ${styles.contentSectionWide}`} data-testid="ats-keywords">
+          <h3><Key size={19} weight="bold" aria-hidden="true" />ATS Keywords</h3>
+          <ul className={styles.tags}>
             {atsKeywords.map((kw, index) => (
-              <li key={`ats-${kw}-${index}`}>{kw}</li>
+              <li className={styles.tag} key={`ats-${kw}-${index}`}>{kw}</li>
             ))}
           </ul>
         </section>
       )}
 
       {strengths && strengths.length > 0 && (
-        <section data-testid="strengths">
-          <h3>Key Strengths</h3>
-          <ul>
+        <section className={styles.contentSection} data-testid="strengths">
+          <h3><TrendUp size={19} weight="bold" aria-hidden="true" />Key Strengths</h3>
+          <ul className={styles.recommendations}>
             {strengths.map((str, index) => (
               <li key={`strength-${index}`}>{str}</li>
             ))}
@@ -107,9 +113,9 @@ export const MatchResult: React.FC<MatchResultProps> = ({
       )}
 
       {weaknesses && weaknesses.length > 0 && (
-        <section data-testid="weaknesses">
-          <h3>Identified Gaps</h3>
-          <ul>
+        <section className={styles.contentSection} data-testid="weaknesses">
+          <h3><TrendDown size={19} weight="bold" aria-hidden="true" />Identified Gaps</h3>
+          <ul className={styles.recommendations}>
             {weaknesses.map((weak, index) => (
               <li key={`weakness-${index}`}>{weak}</li>
             ))}
@@ -118,15 +124,16 @@ export const MatchResult: React.FC<MatchResultProps> = ({
       )}
 
       {recommendations && recommendations.length > 0 && (
-        <section data-testid="match-recommendations">
-          <h3>Actionable Recommendations</h3>
-          <ul>
+        <section className={`${styles.contentSection} ${styles.contentSectionWide}`} data-testid="match-recommendations">
+          <h3><Lightbulb size={19} weight="bold" aria-hidden="true" />Actionable Recommendations</h3>
+          <ul className={styles.recommendations}>
             {recommendations.map((rec, index) => (
               <li key={`rec-${index}`}>{rec}</li>
             ))}
           </ul>
         </section>
       )}
+      </div>
     </article>
   );
 };

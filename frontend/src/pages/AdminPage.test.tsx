@@ -62,6 +62,8 @@ describe('AdminPage', () => {
       expect(screen.getByText('4.8%')).toBeTruthy();
       expect(screen.getByText('admin@test.com')).toBeTruthy();
       expect(screen.getByText('resume.pdf')).toBeTruthy();
+      expect(screen.getByRole('region', { name: 'Registered users table' })).toBeTruthy();
+      expect(screen.getByRole('region', { name: 'Recent analyses table' })).toBeTruthy();
     });
   });
 });
