@@ -28,9 +28,9 @@ import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(controllers = AnalysisController.class)
 @Import({
-    SecurityConfiguration.class,
-    SecurityErrorHandler.class,
-    WebMvcConfiguration.class
+        SecurityConfiguration.class,
+        SecurityErrorHandler.class,
+        WebMvcConfiguration.class
 })
 class MatchAnalysisControllerTest {
 
@@ -49,18 +49,17 @@ class MatchAnalysisControllerTest {
     void setUp() {
         when(userResolver.supportsParameter(any())).thenCallRealMethod();
         when(userResolver.resolveArgument(any(), any(), any(), any()))
-            .thenReturn(new AuthenticatedUser(1L));
+                .thenReturn(new AuthenticatedUser(1L));
     }
 
     @Test
     @WithMockUser(username = "1", roles = "USER")
     void analyzeMatchSuccessReturns201() throws Exception {
         MockMultipartFile file = new MockMultipartFile(
-            "file",
-            "resume.pdf",
-            "application/pdf",
-            "%PDF-1.4 sample content".getBytes()
-        );
+                "file",
+                "resume.pdf",
+                "application/pdf",
+                "%PDF-1.4 sample content".getBytes());
 
         ObjectNode resultJson = objectMapper.createObjectNode();
         resultJson.put("fileName", "resume.pdf");
@@ -68,39 +67,39 @@ class MatchAnalysisControllerTest {
         resultJson.put("matchScore", 90);
 
         PersistedMatchResponse response = new PersistedMatchResponse(
-            102L,
-            Instant.parse("2026-08-31T12:00:00Z"),
-            resultJson
-        );
+                102L,
+                Instant.parse("2026-08-31T12:00:00Z"),
+                resultJson);
 
-        when(service.analyzeMatch(eq(1L), any(), eq(null), eq("We are looking for a Senior Java Engineer with 5+ years experience in Spring Boot, MySQL, Docker, and REST APIs."), eq("Senior Java Engineer")))
-            .thenReturn(response);
+        when(service.analyzeMatch(eq(1L), any(), eq(null), eq(
+                "We are looking for a Senior Java Engineer with 5+ years experience in Spring Boot, MySQL, Docker, and REST APIs."),
+                eq("Senior Java Engineer")))
+                .thenReturn(response);
 
         mockMvc.perform(multipart("/api/analyses/match")
                 .file(file)
-                .param("jobDescription", "We are looking for a Senior Java Engineer with 5+ years experience in Spring Boot, MySQL, Docker, and REST APIs.")
+                .param("jobDescription",
+                        "We are looking for a Senior Java Engineer with 5+ years experience in Spring Boot, MySQL, Docker, and REST APIs.")
                 .param("targetRole", "Senior Java Engineer"))
-            .andExpect(status().isCreated())
-            .andExpect(jsonPath("$.id").value(102))
-            .andExpect(jsonPath("$.result.targetRole").value("Senior Java Engineer"))
-            .andExpect(jsonPath("$.result.matchScore").value(90));
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(102))
+                .andExpect(jsonPath("$.result.targetRole").value("Senior Java Engineer"))
+                .andExpect(jsonPath("$.result.matchScore").value(90));
     }
 
     @Test
     @WithMockUser(username = "1", roles = "USER")
     void analyzeMatchWithJdPdfSuccessReturns201() throws Exception {
         MockMultipartFile file = new MockMultipartFile(
-            "file",
-            "resume.pdf",
-            "application/pdf",
-            "%PDF-1.4 sample content".getBytes()
-        );
+                "file",
+                "resume.pdf",
+                "application/pdf",
+                "%PDF-1.4 sample content".getBytes());
         MockMultipartFile jdFile = new MockMultipartFile(
-            "jdFile",
-            "job_description.pdf",
-            "application/pdf",
-            "%PDF-1.4 sample jd content".getBytes()
-        );
+                "jdFile",
+                "job_description.pdf",
+                "application/pdf",
+                "%PDF-1.4 sample jd content".getBytes());
 
         ObjectNode resultJson = objectMapper.createObjectNode();
         resultJson.put("fileName", "resume.pdf");
@@ -109,21 +108,20 @@ class MatchAnalysisControllerTest {
         resultJson.put("matchScore", 85);
 
         PersistedMatchResponse response = new PersistedMatchResponse(
-            103L,
-            Instant.parse("2026-08-31T12:00:00Z"),
-            resultJson
-        );
+                103L,
+                Instant.parse("2026-08-31T12:00:00Z"),
+                resultJson);
 
         when(service.analyzeMatch(eq(1L), any(), any(), eq(null), eq(null)))
-            .thenReturn(response);
+                .thenReturn(response);
 
         mockMvc.perform(multipart("/api/analyses/match")
                 .file(file)
                 .file(jdFile))
-            .andExpect(status().isCreated())
-            .andExpect(jsonPath("$.id").value(103))
-            .andExpect(jsonPath("$.result.jdFileName").value("job_description.pdf"))
-            .andExpect(jsonPath("$.result.targetRole").value("Lead Architect"))
-            .andExpect(jsonPath("$.result.matchScore").value(85));
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(103))
+                .andExpect(jsonPath("$.result.jdFileName").value("job_description.pdf"))
+                .andExpect(jsonPath("$.result.targetRole").value("Lead Architect"))
+                .andExpect(jsonPath("$.result.matchScore").value(85));
     }
 }
