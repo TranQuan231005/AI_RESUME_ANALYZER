@@ -1,5 +1,8 @@
 import React from 'react';
+import { Lightbulb, MagnifyingGlass, Sparkle } from '@phosphor-icons/react';
 import type { ResumeAnalysisResult } from '../types/analysis';
+import { Alert, Badge, LoadingSkeleton, ScoreSummary } from './ui';
+import styles from './Result.module.css';
 
 interface ResumeResultProps {
   loading: boolean;
@@ -13,11 +16,11 @@ export const ResumeResult: React.FC<ResumeResultProps> = ({
   result,
 }) => {
   if (loading) {
-    return <p role="status" data-testid="loading-state">Analyzing Resume...</p>;
+    return <LoadingSkeleton label="Analyzing Resume..." testId="loading-state" />;
   }
 
   if (error) {
-    return <p role="alert" data-testid="error-state">Error: {error}</p>;
+    return <Alert tone="error" testId="error-state">Error: {error}</Alert>;
   }
 
   if (!result) {
@@ -27,68 +30,68 @@ export const ResumeResult: React.FC<ResumeResultProps> = ({
   const { ai, fieldEvidence, recommendations, recommendedSkills, scoreBreakdown } = result;
 
   return (
-    <article data-testid="resume-result">
+    <article className={styles.result} data-testid="resume-result">
       {ai.usedFallback && (
-        <strong data-testid="fallback-badge">
-          Fallback Mode
-        </strong>
+        <Alert tone="warning">
+          <div className={styles.fallback}><strong data-testid="fallback-badge">Fallback Mode</strong><p>The local rule-based engine produced this result because the AI provider was unavailable.</p></div>
+        </Alert>
       )}
 
-      <header>
-        <h2>{result.fileName}</h2>
-        <p>{result.candidateName ?? 'Candidate name unavailable'}</p>
-        <p>Predicted field: {result.predictedField}</p>
+      <header className={styles.documentHeader}>
+        <div><h2>{result.fileName}</h2><p>{result.candidateName ?? 'Candidate name unavailable'}</p></div>
+        <div className={styles.meta}><Badge tone="accent">{result.predictedField}</Badge><p>Predicted field</p></div>
       </header>
 
-      <h3>Overall Score: {result.resumeScore}/100</h3>
-      <progress aria-label="Overall resume score" value={result.resumeScore} max={100} />
+      <ScoreSummary score={result.resumeScore} label="Overall Score" hint="A structured score across eight resume quality signals." />
 
-      <section data-testid="score-breakdown" aria-labelledby="score-breakdown-heading">
-        <h3 id="score-breakdown-heading">Score breakdown</h3>
-        <div>Contact: {scoreBreakdown.contact}/5</div>
-        <div>Summary: {scoreBreakdown.summary}/10</div>
-        <div>Skills: {scoreBreakdown.skills}/15</div>
-        <div>Education: {scoreBreakdown.education}/10</div>
-        <div>Experience: {scoreBreakdown.experience}/20</div>
-        <div>Projects: {scoreBreakdown.projects}/15</div>
-        <div>Achievements: {scoreBreakdown.achievementsCertifications}/10</div>
-        <div>Impact: {scoreBreakdown.quantifiedImpact}/15</div>
+      <section className={styles.breakdown} data-testid="score-breakdown" aria-labelledby="score-breakdown-heading">
+        <h3 className={styles.sectionTitle} id="score-breakdown-heading">Score breakdown</h3>
+        <div className={styles.metric}><span>Contact: </span><strong>{scoreBreakdown.contact}/5</strong></div>
+        <div className={styles.metric}><span>Summary: </span><strong>{scoreBreakdown.summary}/10</strong></div>
+        <div className={styles.metric}><span>Skills: </span><strong>{scoreBreakdown.skills}/15</strong></div>
+        <div className={styles.metric}><span>Education: </span><strong>{scoreBreakdown.education}/10</strong></div>
+        <div className={styles.metric}><span>Experience: </span><strong>{scoreBreakdown.experience}/20</strong></div>
+        <div className={styles.metric}><span>Projects: </span><strong>{scoreBreakdown.projects}/15</strong></div>
+        <div className={styles.metric}><span>Achievements: </span><strong>{scoreBreakdown.achievementsCertifications}/10</strong></div>
+        <div className={styles.metric}><span>Impact: </span><strong>{scoreBreakdown.quantifiedImpact}/15</strong></div>
       </section>
 
-      {fieldEvidence.length > 0 && (
-        <section data-testid="evidence-section">
-          <h3>Evidence</h3>
-          <ul>
+      <div className={styles.contentGrid}>
+        {fieldEvidence.length > 0 && (
+        <section className={styles.contentSection} data-testid="evidence-section">
+          <h3><MagnifyingGlass size={19} weight="bold" aria-hidden="true" />Evidence</h3>
+          <ul className={styles.tags}>
             {fieldEvidence.map((item, index) => (
-              <li key={`${item.field}-${index}`}>
+              <li className={styles.tag} key={`${item.field}-${index}`}>
                 {item.field}: {item.matchedSkills.join(', ')} ({Math.round(item.confidence * 100)}%)
               </li>
             ))}
           </ul>
         </section>
-      )}
+        )}
 
       {recommendedSkills.length > 0 && (
-        <section data-testid="recommended-skills">
-          <h3>Recommended Skills</h3>
-          <ul>
+        <section className={styles.contentSection} data-testid="recommended-skills">
+          <h3><Sparkle size={19} weight="bold" aria-hidden="true" />Recommended Skills</h3>
+          <ul className={styles.tags}>
             {recommendedSkills.map((skill, idx) => (
-              <li key={idx}>{skill}</li>
+              <li className={`${styles.tag} ${styles.tagSuccess}`} key={idx}>{skill}</li>
             ))}
           </ul>
         </section>
       )}
 
       {recommendations.length > 0 && (
-        <section data-testid="recommendations">
-          <h3>Recommendations</h3>
-          <ul>
+        <section className={`${styles.contentSection} ${styles.contentSectionWide}`} data-testid="recommendations">
+          <h3><Lightbulb size={19} weight="bold" aria-hidden="true" />Recommendations</h3>
+          <ul className={styles.recommendations}>
             {recommendations.map((rec, idx) => (
               <li key={idx}>{rec}</li>
             ))}
           </ul>
         </section>
       )}
+      </div>
     </article>
   );
 };

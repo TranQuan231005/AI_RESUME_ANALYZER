@@ -1,0 +1,22 @@
+.page { display: grid; gap: 2rem; }
+.metrics { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); border-top: 1px solid var(--line-strong); border-bottom: 1px solid var(--line-strong); }
+.metric { min-width: 0; padding: 1.25rem 1rem; border-right: 1px solid var(--line); }
+.metric:last-child { border-right: 0; }
+.metricIcon { margin-bottom: 1.2rem; color: var(--accent); }
+.metric h3 { min-height: 2.4em; margin-bottom: 0.5rem; color: var(--ink-soft); font-size: 0.72rem; font-weight: 650; line-height: 1.2; }
+.metric p { margin: 0; font-family: var(--font-mono); font-size: clamp(1.1rem, 2vw, 1.65rem); font-weight: 600; letter-spacing: -0.05em; }
+.dataSection { display: grid; gap: 1rem; }
+.sectionHeader { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
+.sectionHeader h2 { margin: 0; font-size: 1.45rem; letter-spacing: -0.045em; }
+.tableWrap { max-width: 100%; overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.table { width: 100%; min-width: 680px; border-collapse: collapse; }
+.tableWide { min-width: 920px; }
+.table th { position: sticky; top: 0; padding: 0.8rem 1rem; border-bottom: 1px solid var(--line-strong); background: var(--surface-muted); color: var(--ink-soft); font-family: var(--font-mono); font-size: 0.68rem; font-weight: 600; letter-spacing: 0.035em; text-align: left; text-transform: uppercase; }
+.table td { padding: 0.95rem 1rem; border-bottom: 1px solid var(--line); color: var(--ink-soft); font-size: 0.8rem; white-space: nowrap; }
+.table tbody tr:last-child td { border-bottom: 0; }
+.table tbody tr:hover td { background: #f7f5ef; }
+.numeric { font-family: var(--font-mono); text-align: right !important; }
+.primaryCell { color: var(--ink) !important; font-weight: 650; }
+
+@media (max-width: 1020px) { .metrics { grid-template-columns: repeat(3, 1fr); } .metric:nth-child(3) { border-right: 0; } .metric:nth-child(-n + 3) { border-bottom: 1px solid var(--line); } }
+@media (max-width: 600px) { .metrics { grid-template-columns: repeat(2, 1fr); } .metric:nth-child(3) { border-right: 1px solid var(--line); } .metric:nth-child(even) { border-right: 0; } .metric:nth-child(-n + 4) { border-bottom: 1px solid var(--line); } }

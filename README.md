@@ -1,218 +1,299 @@
 # AI Resume Analyzer
 
-AI Resume Analyzer là một dự án demo local theo kế hoạch 3 tuần, tập trung vào việc phân tích CV, so khớp với mô tả công việc (JD), và cung cấp lịch sử kết quả cho người dùng cũng như dashboard cho quản trị viên.
+AI Resume Analyzer là ứng dụng web chạy local giúp đánh giá CV tiếng Anh, so khớp CV với mô tả công việc và đưa ra gợi ý cải thiện có cấu trúc. Hệ thống kết hợp pipeline chấm điểm deterministic với Ollama để vẫn hoạt động ổn định khi mô hình AI local không sẵn sàng.
 
-> README này là skeleton ban đầu để chuẩn hóa repo và làm nền cho việc phát triển tiếp theo. Nội dung có thể được cập nhật khi từng module chính thức được triển khai.
+> Trạng thái: MVP đã triển khai đủ 5 luồng chính — đăng nhập, phân tích CV, JD matching, lịch sử người dùng và admin dashboard.
 
-## 1. Tóm tắt dự án
+## Giao diện
 
-Dự án nhằm giúp người dùng:
+### User Dashboard
 
-- đăng nhập bằng email/password
-- tải lên CV PDF dạng tiếng Anh
-- trích xuất thông tin từ CV
-- đánh giá CV theo tiêu chí nội dung, kỹ năng và độ phù hợp
-- so khớp với mô tả công việc (JD)
-- xem lịch sử phân tích và chi tiết kết quả
-- đối với admin, theo dõi người dùng, analyses và AI metrics
+![User Dashboard](docs/images/user-dashboard.png)
 
-## 2. Trạng thái hiện tại của repo
+<details>
+<summary>Xem thêm màn hình Login và Admin Dashboard</summary>
 
-Hiện tại, nhánh main đang ở trạng thái khởi đầu và chưa triển khai đầy đủ kiến trúc theo kế hoạch. Các thành phần hiện có chủ yếu là:
+### Login
 
-- tài liệu kế hoạch: `KE_HOACH_LAM_LAI_DU_AN_3_TUAN.md`
-- scaffold frontend cơ bản cho auth state và route bảo vệ:
-  - `frontend/src/context/AuthContext.tsx`
-  - `frontend/src/components/ProtectedRoute.tsx`
+![Login](docs/images/login.png)
 
-Các module sau vẫn chưa được dựng đầy đủ:
+### Admin Dashboard
 
-- backend Java Spring Boot
-- AI service Python FastAPI
-- MySQL schema và migrations
-- Docker Compose runtime
-- UI feature modules theo user flow
-- automated test và CI
+![Admin Dashboard](docs/images/admin-dashboard.png)
 
-## 3. Mục tiêu nghiệp vụ
+> Admin Dashboard trong ảnh sử dụng dữ liệu demo để minh họa đầy đủ trạng thái KPI và bảng dữ liệu.
 
-### User flows chính
+</details>
 
-1. User Login
-2. Resume Analysis
-3. JD Match
-4. User History
-5. Admin AI Dashboard
+## Tính năng chính
 
-### Role và quyền
+- Đăng nhập bằng email/password, JWT access token và phân quyền `USER` / `ADMIN`.
+- Upload CV tiếng Anh ở định dạng PDF, tối đa 5 MB.
+- Trích xuất tên, email, kỹ năng và nhóm chuyên môn từ CV.
+- Chấm điểm CV theo 8 nhóm tiêu chí với tổng điểm 0–100.
+- So khớp CV với JD dạng PDF hoặc văn bản, trả về matched skills, missing skills và ATS keywords.
+- Đề xuất kỹ năng và hành động cải thiện CV.
+- Lưu kết quả có cấu trúc để người dùng xem lại lịch sử; không lưu file CV hoặc nội dung JD gốc.
+- Admin dashboard hiển thị users, analyses, fallback rate và latency của AI pipeline.
+- Tự động chuyển sang rule-based fallback khi Ollama lỗi, timeout hoặc chưa được cài đặt.
+- OpenAPI contracts, fixtures, evaluation dataset và CI được lưu cùng mã nguồn.
 
-- USER: đăng nhập, tạo analysis, xem lịch sử của mình
-- ADMIN: xem users, analyses và AI metrics
+## Kiến trúc
 
-## 4. Kiến trúc đề xuất
-
-### Stack chính
-
-| Layer | Công nghệ | Mục đích |
-| --- | --- | --- |
-| Frontend | React + TypeScript + Vite | UI auth, upload CV, result, history, admin |
-| Backend API | Java 21 + Spring Boot 3 + Spring Security + JPA | Auth, RBAC, orchestration, persistence |
-| AI Service | Python 3.11 + FastAPI + Pydantic + pdfminer.six | trích xuất CV, chấm điểm, matching |
-| Database | MySQL 8 | lưu users và analysis results |
-| Local AI | Ollama + qwen3:4b | structured enrichment |
-| Runtime | Docker Compose | chạy local toàn hệ thống |
-| Quality | JUnit, pytest, Playwright, GitHub Actions | test và CI |
-
-### Luồng kiến trúc
-
-```text
-Browser
-  -> React frontend
-  -> Spring Boot API -> MySQL
-  -> FastAPI AI service -> Ollama
-                        \-> deterministic fallback
+```mermaid
+flowchart LR
+    Browser[React + TypeScript] -->|REST / JWT| Backend[Spring Boot API]
+    Backend -->|JPA / Flyway| Database[(MySQL 8)]
+    Backend -->|HTTP multipart| AI[FastAPI AI Service]
+    AI --> Parser[PDF extraction + deterministic engines]
+    AI -->|Optional enrichment| Ollama[Ollama / qwen3:4b]
+    AI -. Ollama unavailable .-> Fallback[Rule-based fallback]
 ```
 
-## 5. Ràng buộc kế hoạch và phạm vi
+Spring Boot là ranh giới bảo mật và điều phối chính. Frontend không gọi trực tiếp AI service; mọi thao tác USER được giới hạn theo tài khoản đã xác thực và các endpoint quản trị yêu cầu role ADMIN.
 
-Dự án tuân theo các quy định trong kế hoạch 3 tuần:
+## Công nghệ sử dụng
 
-- chỉ triển khai MVP theo 5 user flow chính
-- không mở rộng thêm registration, refresh token, payment, landing page, v.v.
-- toàn bộ UI, API message, prompt, test, fixture và AI output dùng tiếng Anh
-- dữ liệu lưu chỉ chứa kết quả có cấu trúc, không lưu file CV/JD gốc
-- demo chạy local bằng Docker Compose, không cần Internet
+| Thành phần | Công nghệ |
+| --- | --- |
+| Frontend | React 18, TypeScript, Vite 7, CSS Modules, Phosphor Icons |
+| Backend | Java 21, Spring Boot 3.3, Spring Security, JPA, Flyway |
+| AI service | Python 3.11, FastAPI, Pydantic, pypdf |
+| Database | MySQL 8; H2 dùng cho test và chạy backend độc lập |
+| Local AI | Ollama với model mặc định `qwen3:4b` |
+| Testing | Jest, Testing Library, JUnit, pytest |
+| Runtime & CI | Docker Compose, GitHub Actions |
 
-## 6. Yêu cầu chức năng bắt buộc
+## Luồng nghiệp vụ
 
-- Seed 2 tài khoản demo: USER và ADMIN
-- Login email/password với BCrypt + JWT access token 2 giờ
-- RBAC theo role
-- Upload CV PDF tối đa 5 MB, tiếng Anh
-- Trích xuất text từ PDF và xử lý dạng có cấu trúc
-- So khớp CV với JD tiếng Anh
-- Hiển thị score, skill match/missing, ATS keywords, recommendations
-- User history và admin dashboard
-- Fallback deterministic khi Ollama không khả dụng
+1. **Login:** xác thực tài khoản demo và cấp JWT có thời hạn mặc định 2 giờ.
+2. **Resume Analysis:** upload PDF, trích xuất dữ liệu, tính score breakdown và nhận recommendations.
+3. **Job Match & ATS:** so sánh CV với JD PDF/text để tìm kỹ năng phù hợp, khoảng trống và ATS keywords.
+4. **Analysis History:** USER xem danh sách và chi tiết các kết quả của chính mình.
+5. **Admin Dashboard:** ADMIN theo dõi người dùng, analyses, provider, fallback và latency.
 
-## 7. Repository structure mục tiêu
+## Cấu trúc repository
 
 ```text
 .
-├── frontend/
-│   ├── src/
-│   ├── public/
-│   └── package.json
-├── backend/
-│   └── src/main/java/com/resumeanalyzer/
-├── ai-service/
-│   ├── app/
-│   ├── requirements.txt
-│   └── Dockerfile
+├── frontend/                   # React application, pages, UI primitives và tests
+├── backend/                    # Spring Boot API, security, persistence và migrations
+├── ai-service/                 # PDF parsing, scoring, matching, Ollama và tests
 ├── contracts/
-│   ├── openapi/
-│   └── fixtures/
-├── evaluation/
-│   ├── resumes/
-│   ├── jobs/
-│   ├── pairs/
-│   ├── ground-truth/
-│   └── reports/
-├── docs/
-├── .github/
+│   ├── openapi/                # Public API và AI service specifications
+│   └── fixtures/               # Request, response và error fixtures
+├── evaluation/                 # Dataset, ground truth và benchmark runner
+├── sample_files/               # CV/JD mẫu để demo
+├── docs/images/                # Ảnh giao diện dùng trong README
+├── scripts/                    # OpenAPI export và repository utilities
+├── .github/workflows/ci.yml    # CI cho frontend, backend và AI service
 ├── docker-compose.yml
-├── .env.example
-├── AI_USAGE_LOG.md
-├── KE_HOACH_LAM_LAI_DU_AN_3_TUAN.md
-├── README.md
-└── .gitignore
+└── .env.example
 ```
 
-## 8. Phân công và workflow phát triển
+## Chạy nhanh bằng Docker Compose
 
-- Mỗi thành viên triển khai phần theo chức năng được giao
-- Mỗi task cần có test xác thực
-- Mọi thay đổi phải phù hợp với scope đã định trong kế hoạch
-- AI-assisted development được phép, nhưng cần kiểm chứng và giải thích code
+### Yêu cầu
 
-## 9. Roadmap dự kiến
+- Docker Engine/Desktop có Docker Compose.
+- Tối thiểu khoảng 4 GB RAM trống cho stack cơ bản.
+- Ollama là tùy chọn; không có Ollama thì hệ thống dùng deterministic fallback.
 
-### Giai đoạn 1: Foundation
-
-- setup repo và cấu trúc dự án
-- thiết lập frontend auth và route guard
-- thiết lập backend skeleton
-- thiết lập AI service skeleton
-- cấu hình Docker Compose và env
-
-### Giai đoạn 2: Core feature
-
-- đăng nhập và RBAC
-- upload CV và parse PDF
-- resume analysis
-- JD matching
-- user history/detail
-
-### Giai đoạn 3: Admin + Quality
-
-- admin dashboard
-- metrics và monitoring
-- test automation
-- CI/CD local validation
-- demo runbook
-
-## 10. Hướng dẫn khởi động (skeleton)
-
-### Yêu cầu môi trường
-
-- Node.js 18+
-- Java 21
-- Python 3.11
-- Docker + Docker Compose
-- Ollama với model `qwen3:4b`
-
-### Bước khởi động dự kiến
+### 1. Chuẩn bị cấu hình
 
 ```bash
-# frontend
-cd frontend
-npm install
-npm run dev
-
-# backend
-cd backend
-./gradlew bootRun
-
-# ai service
-cd ai-service
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-uvicorn app.main:app --reload
+git clone https://github.com/TranQuan231005/AI_RESUME_ANALYZER.git
+cd AI_RESUME_ANALYZER
+cp .env.example .env
 ```
 
-> Các lệnh trên chỉ là skeleton và sẽ được cập nhật khi dự án hoàn thiện hơn.
+Các giá trị trong `.env.example` phù hợp cho demo local. Hãy thay `JWT_SECRET` và mật khẩu database nếu chạy trong môi trường dùng chung.
 
-## 11. Ghi chú
+### 2. Chuẩn bị Ollama (tùy chọn)
 
-- Đây là README khởi đầu, không phải bản hoàn chỉnh của sản phẩm.
-- Tất cả nội dung hiện tại cần được đồng bộ với tiến độ thực tế của repo sau mỗi milestone.
-- Bản cuối của README nên phản ánh kiến trúc đã triển khai, API contract, setup thực tế và hướng dẫn chạy local chính xác.
+```bash
+ollama pull qwen3:4b
+ollama serve
+```
 
-## 12. Tài liệu tham khảo
+Nếu Ollama đang chạy trên máy host, container AI service kết nối qua `host.docker.internal:11434` theo cấu hình mặc định.
 
-- `KE_HOACH_LAM_LAI_DU_AN_3_TUAN.md`
-- `frontend/src/context/AuthContext.tsx`
-- `frontend/src/components/ProtectedRoute.tsx`
+### 3. Khởi động hệ thống
 
-## 13. Trạng thái hiện tại
+```bash
+docker compose up --build
+```
 
-Status: In progress / initial scaffold
+Sau khi các service khởi động:
 
-- tài liệu kế hoạch đã hoàn tất
-- frontend auth route scaffold đã có
-- backend, AI service, database và toàn bộ flow nghiệp vụ chưa triển khai
+| Service | URL |
+| --- | --- |
+| Frontend | http://localhost:5173 |
+| Backend API | http://localhost:8080 |
+| AI service | http://localhost:8000 |
+| AI service OpenAPI | http://localhost:8000/docs |
+| MySQL | `localhost:3306` |
 
----
+Dừng stack bằng `Ctrl+C`. Dùng `docker compose down` để dừng và xóa containers; volume MySQL vẫn được giữ lại.
 
-Dự án cần được cập nhật thường xuyên theo tiến độ thực tế để đảm bảo README luôn là nguồn tham khảo đáng tin cậy cho team.
+## Tài khoản demo
+
+Khi chạy Docker Compose, seed accounts được bật mặc định và được tạo idempotent:
+
+| Role | Email | Password | Route sau đăng nhập |
+| --- | --- | --- | --- |
+| USER | `user@example.test` | `User@123456` | `/dashboard` |
+| ADMIN | `admin@example.test` | `Admin@123456` | `/admin` |
+
+Có thể thay đổi các tài khoản này qua nhóm biến `SEED_USER_*` và `SEED_ADMIN_*` trong `.env`.
+
+## Chạy từng service khi phát triển
+
+### AI service
+
+```bash
+cd ai-service
+python3.11 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8000
+```
+
+### Backend
+
+Backend mặc định có thể dùng H2 in-memory. Cần khai báo JWT secret và bật seed nếu muốn đăng nhập bằng tài khoản demo:
+
+```bash
+cd backend
+JWT_SECRET='replace-with-at-least-32-bytes-secret' \
+SEED_USERS_ENABLED=true \
+SEED_USER_EMAIL='user@example.test' \
+SEED_USER_PASSWORD='User@123456' \
+SEED_USER_FULL_NAME='Demo User' \
+SEED_ADMIN_EMAIL='admin@example.test' \
+SEED_ADMIN_PASSWORD='Admin@123456' \
+SEED_ADMIN_FULL_NAME='Demo Admin' \
+AI_SERVICE_URL='http://localhost:8000' \
+./gradlew bootRun
+```
+
+### Frontend
+
+```bash
+cd frontend
+npm ci
+npm run dev
+```
+
+Vite chạy tại `http://localhost:5173` và proxy các request `/api` sang `VITE_API_BASE_URL`, mặc định là `http://localhost:8080`.
+
+## Biến môi trường quan trọng
+
+| Biến | Giá trị mặc định | Mô tả |
+| --- | --- | --- |
+| `DB_NAME` | `resume_analyzer` | Tên database MySQL |
+| `DB_USER` | `analyzer_user` | Database user |
+| `DB_PASSWORD` | `analyzer_pass` | Database password cho local demo |
+| `JWT_SECRET` | Có trong `.env.example` | Secret ký JWT, tối thiểu 32 bytes |
+| `JWT_EXPIRATION_MS` | `7200000` | Thời hạn access token, milliseconds |
+| `AI_SERVICE_URL` | `http://localhost:8000` | URL AI service cho backend |
+| `AI_TIMEOUT_SECONDS` | `60` | Timeout khi gọi AI/Ollama |
+| `OLLAMA_BASE_URL` | `http://localhost:11434` | Ollama endpoint |
+| `OLLAMA_MODEL` | `qwen3:4b` | Model enrichment |
+| `VITE_API_BASE_URL` | `http://localhost:8080` | Backend target cho Vite proxy |
+
+Xem toàn bộ cấu hình tại [`.env.example`](.env.example).
+
+## API chính
+
+| Method | Endpoint | Quyền | Chức năng |
+| --- | --- | --- | --- |
+| `POST` | `/api/auth/login` | Public | Đăng nhập và nhận JWT |
+| `GET` | `/api/me` | Authenticated | Lấy thông tin người dùng hiện tại |
+| `POST` | `/api/analyses/resume` | USER | Phân tích một CV PDF |
+| `POST` | `/api/analyses/match` | USER | So khớp CV với JD PDF/text |
+| `GET` | `/api/analyses` | USER | Lấy lịch sử có phân trang |
+| `GET` | `/api/analyses/{id}` | USER | Lấy chi tiết analysis thuộc người dùng |
+| `GET` | `/api/admin/users` | ADMIN | Danh sách users có phân trang |
+| `GET` | `/api/admin/analyses` | ADMIN | Danh sách analyses và bộ lọc |
+| `GET` | `/api/admin/metrics` | ADMIN | Tổng hợp AI metrics |
+
+Nguồn chuẩn cho request/response schema:
+
+- [`contracts/openapi/public-api.json`](contracts/openapi/public-api.json)
+- [`contracts/openapi/ai-service.json`](contracts/openapi/ai-service.json)
+- [`contracts/fixtures/`](contracts/fixtures/)
+
+## Chấm điểm và fallback
+
+Resume score gồm 8 nhóm tiêu chí: contact, summary, skills, education, experience, projects, achievements/certifications và quantified impact. Các engine deterministic luôn tạo được kết quả cơ bản; Ollama chỉ làm giàu thêm skills, ATS insights và recommendations.
+
+Mỗi kết quả có metadata gồm provider, model, processing time và `usedFallback`. Khi Ollama không phản hồi, API trả kết quả rule-based hợp lệ thay vì làm hỏng toàn bộ luồng phân tích.
+
+## Dữ liệu và quyền riêng tư
+
+- Chỉ chấp nhận PDF tiếng Anh dạng có thể trích xuất text, tối đa 5 MB.
+- CV và JD được xử lý trong memory; file/nội dung gốc không được persist.
+- Database chỉ lưu kết quả JSON có cấu trúc và metadata phục vụ history/admin.
+- Mật khẩu được băm bằng BCrypt.
+- Backend dùng stateless JWT và kiểm tra role ở API boundary.
+- USER chỉ được đọc analysis thuộc tài khoản của mình.
+
+Đây là ứng dụng demo local. Không dùng credentials mẫu hoặc secret trong `.env.example` cho production.
+
+## Kiểm thử
+
+### Frontend
+
+```bash
+cd frontend
+npm ci
+npm run lint
+npm test -- --runInBand
+npm run build
+```
+
+### Backend
+
+```bash
+cd backend
+./gradlew test --no-daemon
+```
+
+### AI service, contracts và evaluation
+
+```bash
+python3.11 -m venv .venv
+source .venv/bin/activate
+pip install -r ai-service/requirements.txt
+pytest
+python scripts/export_openapi.py --check
+python evaluation/validate_dataset.py
+python evaluation/run_evaluation.py --mode rule-only
+```
+
+GitHub Actions chạy type-check/test/build frontend, Gradle tests, pytest và kiểm tra OpenAPI trên push hoặc pull request vào `main`, `master` và `develop`.
+
+## Dữ liệu demo
+
+Thư mục [`sample_files/`](sample_files/) chứa nhiều CV PDF theo nhóm chuyên môn và các trường hợp biên. File [`sample_files/job_descriptions.md`](sample_files/job_descriptions.md) cung cấp JD mẫu để thử Job Match & ATS.
+
+Evaluation dataset và ground truth nằm trong [`evaluation/`](evaluation/); báo cáo gần nhất được tạo tại [`evaluation/reports/evaluation-summary.md`](evaluation/reports/evaluation-summary.md).
+
+## Giới hạn phạm vi MVP
+
+- Không có registration hoặc refresh token.
+- Không có thanh toán, cloud deployment hoặc lưu trữ resume gốc.
+- Không hỗ trợ OCR cho PDF scan/image-only.
+- Không có dark mode hoặc analytics theo chuỗi thời gian.
+- UI, API messages, fixtures và AI output sử dụng tiếng Anh.
+
+## Tài liệu liên quan
+
+- [`KE_HOACH_LAM_LAI_DU_AN_3_TUAN.md`](KE_HOACH_LAM_LAI_DU_AN_3_TUAN.md) — kế hoạch triển khai 3 tuần.
+- [`CHECKLIST_DU_AN.md`](CHECKLIST_DU_AN.md) — roadmap và acceptance checklist.
+- [`contracts/M0_CONTRACT_APPROVAL.md`](contracts/M0_CONTRACT_APPROVAL.md) — contract freeze và approval gate.
+
+## License
+
+Repository hiện chưa khai báo license. Mọi quyền được bảo lưu cho đến khi có file `LICENSE` chính thức.

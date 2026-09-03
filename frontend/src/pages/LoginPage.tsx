@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
+import { FileMagnifyingGlass, SignIn } from '@phosphor-icons/react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { ApiRequestError, authenticate } from '../api/auth';
+import { Alert, Button } from '../components/ui';
 import { useAuth } from '../context/AuthContext';
+import styles from './LoginPage.module.css';
 
 export const LoginPage: React.FC = () => {
   const { token, user, login } = useAuth();
@@ -31,48 +34,61 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <main className="login-container">
-      <div className="login-card">
-        <div className="login-header">
-          <h1>Sign in</h1>
-          <p>Sign in to your account to analyze resumes and review history</p>
+    <main className={styles.page}>
+      <section className={styles.story} aria-label="Product introduction">
+        <div className={styles.brand}>
+          <span className={styles.brandMark}><FileMagnifyingGlass size={20} weight="bold" aria-hidden="true" /></span>
+          AI Resume Analyzer
         </div>
-        <form onSubmit={handleSubmit}>
-          <div>
-            <label htmlFor="email">Email</label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              autoComplete="email"
-              required
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-            />
-          </div>
-          <div>
-            <label htmlFor="password">Password</label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="current-password"
-              required
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-            />
-          </div>
-          {error && <p role="alert">{error}</p>}
-          <button type="submit" disabled={isSubmitting} style={{ width: '100%', marginTop: '0.5rem' }}>
-            {isSubmitting ? 'Signing in…' : 'Sign in'}
-          </button>
-        </form>
-        <div className="demo-credentials">
-          <div style={{ fontWeight: 600, marginBottom: '0.35rem', color: 'var(--text-primary)' }}>Demo Accounts:</div>
-          <div>👤 User: <code>user@example.test</code> &bull; <code>User@123456</code></div>
-          <div style={{ marginTop: '0.25rem' }}>🛡️ Admin: <code>admin@example.test</code> &bull; <code>Admin@123456</code></div>
+        <div className={styles.statement}>
+          <h1>Turn experience into a stronger application.</h1>
+          <p>Analyze resume quality, identify missing skills, and compare your experience with a real job description.</p>
         </div>
-      </div>
+        <p className={styles.note}>Local AI. Structured feedback. No resume storage.</p>
+      </section>
+      <section className={styles.formPane}>
+        <div className={styles.card}>
+          <div className={styles.heading}>
+            <h2>Sign in</h2>
+            <p>Continue to your analysis workspace.</p>
+          </div>
+          <form className={styles.form} onSubmit={handleSubmit}>
+            <div className={styles.field}>
+              <label htmlFor="email">Email</label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                required
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+              />
+            </div>
+            <div className={styles.field}>
+              <label htmlFor="password">Password</label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                required
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+              />
+            </div>
+            {error && <Alert tone="error">{error}</Alert>}
+            <Button type="submit" disabled={isSubmitting} fullWidth icon={<SignIn size={19} weight="bold" aria-hidden="true" />}>
+              {isSubmitting ? 'Signing in…' : 'Sign in'}
+            </Button>
+          </form>
+          <div className={styles.demo}>
+            <p className={styles.demoTitle}>Demo accounts</p>
+            <div className={styles.account}><strong>User</strong><code>user@example.test / User@123456</code></div>
+            <div className={styles.account}><strong>Admin</strong><code>admin@example.test / Admin@123456</code></div>
+          </div>
+        </div>
+      </section>
     </main>
   );
 };

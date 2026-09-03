@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from 'react';
+import { ChartDonut, Clock, FileText, Gauge, Target, Users } from '@phosphor-icons/react';
 import { useAuth } from '../context/AuthContext';
 import { getAdminMetrics, getAdminUsers, getAdminAnalyses } from '../api/admin';
+import { Alert, Badge, LoadingSkeleton, PageHeader } from '../components/ui';
 import type {
   AdminMetricsResponse,
   PagedUsers,
   PagedAdminAnalyses,
 } from '../types/analysis';
+import styles from './AdminPage.module.css';
 
 export const AdminPage: React.FC = () => {
   const { token, user } = useAuth();
@@ -41,100 +44,65 @@ export const AdminPage: React.FC = () => {
   }, [token]);
 
   return (
-    <section data-testid="admin-page">
-      <h1>Admin dashboard</h1>
-      <p>Review system activity and service health.</p>
+    <section className={styles.page} data-testid="admin-page">
+      <PageHeader eyebrow="System overview" title="Admin dashboard" description="Review analysis activity, model behavior, and the health of the local AI workflow." />
 
-      {loading && <p role="status">Loading admin metrics...</p>}
-      {error && <p role="alert" style={{ color: 'red' }}>{error}</p>}
+      {loading && <LoadingSkeleton label="Loading admin metrics..." />}
+      {error && <Alert tone="error">{error}</Alert>}
 
       {metrics && (
         <section data-testid="admin-metrics-section">
-          <h2>System Performance & AI Telemetry</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
-            <div style={{ padding: '1rem', border: '1px solid #ccc', borderRadius: '8px' }}>
-              <h3>Total Analyses</h3>
-              <p style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{metrics.totalAnalyses}</p>
-            </div>
-            <div style={{ padding: '1rem', border: '1px solid #ccc', borderRadius: '8px' }}>
-              <h3>Resume Analyses</h3>
-              <p style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{metrics.resumeAnalysesCount}</p>
-            </div>
-            <div style={{ padding: '1rem', border: '1px solid #ccc', borderRadius: '8px' }}>
-              <h3>Match Analyses</h3>
-              <p style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{metrics.matchAnalysesCount}</p>
-            </div>
-            <div style={{ padding: '1rem', border: '1px solid #ccc', borderRadius: '8px' }}>
-              <h3>Fallback Rate</h3>
-              <p style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{(metrics.fallbackRate * 100).toFixed(1)}%</p>
-            </div>
-            <div style={{ padding: '1rem', border: '1px solid #ccc', borderRadius: '8px' }}>
-              <h3>Avg Processing Time</h3>
-              <p style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{metrics.avgLatencyMs} ms</p>
-            </div>
-            <div style={{ padding: '1rem', border: '1px solid #ccc', borderRadius: '8px' }}>
-              <h3>P95 Latency</h3>
-              <p style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{metrics.p95LatencyMs} ms</p>
-            </div>
+          <h2 className="sr-only">System Performance & AI Telemetry</h2>
+          <div className={styles.metrics}>
+            <div className={styles.metric}><ChartDonut className={styles.metricIcon} size={21} weight="bold" aria-hidden="true" /><h3>Total Analyses</h3><p>{metrics.totalAnalyses}</p></div>
+            <div className={styles.metric}><FileText className={styles.metricIcon} size={21} weight="bold" aria-hidden="true" /><h3>Resume Analyses</h3><p>{metrics.resumeAnalysesCount}</p></div>
+            <div className={styles.metric}><Target className={styles.metricIcon} size={21} weight="bold" aria-hidden="true" /><h3>Match Analyses</h3><p>{metrics.matchAnalysesCount}</p></div>
+            <div className={styles.metric}><Gauge className={styles.metricIcon} size={21} weight="bold" aria-hidden="true" /><h3>Fallback Rate</h3><p>{(metrics.fallbackRate * 100).toFixed(1)}%</p></div>
+            <div className={styles.metric}><Clock className={styles.metricIcon} size={21} weight="bold" aria-hidden="true" /><h3>Avg Processing Time</h3><p>{metrics.avgLatencyMs} ms</p></div>
+            <div className={styles.metric}><Clock className={styles.metricIcon} size={21} weight="bold" aria-hidden="true" /><h3>P95 Latency</h3><p>{metrics.p95LatencyMs} ms</p></div>
           </div>
         </section>
       )}
 
       {users && (
-        <section data-testid="admin-users-section" style={{ marginTop: '2rem' }}>
-          <h2>Registered Users ({users.totalItems})</h2>
-          <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '0.5rem' }}>
+        <section className={styles.dataSection} data-testid="admin-users-section">
+          <div className={styles.sectionHeader}><h2>Registered Users</h2><Badge tone="neutral"><Users size={14} weight="bold" aria-hidden="true" />{users.totalItems} total</Badge></div>
+          <div className={styles.tableWrap} role="region" aria-label="Registered users table" tabIndex={0}><table className={styles.table}>
+            <caption className="sr-only">Registered users</caption>
             <thead>
-              <tr style={{ borderBottom: '2px solid #ddd', textAlign: 'left' }}>
-                <th style={{ padding: '8px' }}>ID</th>
-                <th style={{ padding: '8px' }}>Email</th>
-                <th style={{ padding: '8px' }}>Full Name</th>
-                <th style={{ padding: '8px' }}>Role</th>
+              <tr>
+                <th className={styles.numeric}>ID</th><th>Email</th><th>Full Name</th><th>Role</th>
               </tr>
             </thead>
             <tbody>
               {users.items.map((u) => (
-                <tr key={u.id} style={{ borderBottom: '1px solid #eee' }}>
-                  <td style={{ padding: '8px' }}>{u.id}</td>
-                  <td style={{ padding: '8px' }}>{u.email}</td>
-                  <td style={{ padding: '8px' }}>{u.fullName}</td>
-                  <td style={{ padding: '8px' }}>{u.role}</td>
+                <tr key={u.id}>
+                  <td className={styles.numeric}>{u.id}</td><td className={styles.primaryCell}>{u.email}</td><td>{u.fullName}</td><td><Badge tone={u.role === 'ADMIN' ? 'accent' : 'neutral'}>{u.role}</Badge></td>
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         </section>
       )}
 
       {analyses && (
-        <section data-testid="admin-analyses-section" style={{ marginTop: '2rem' }}>
-          <h2>Recent Analyses ({analyses.totalItems})</h2>
-          <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '0.5rem' }}>
+        <section className={styles.dataSection} data-testid="admin-analyses-section">
+          <div className={styles.sectionHeader}><h2>Recent Analyses</h2><Badge tone="neutral">{analyses.totalItems} total</Badge></div>
+          <div className={styles.tableWrap} role="region" aria-label="Recent analyses table" tabIndex={0}><table className={`${styles.table} ${styles.tableWide}`}>
+            <caption className="sr-only">Recent analyses</caption>
             <thead>
-              <tr style={{ borderBottom: '2px solid #ddd', textAlign: 'left' }}>
-                <th style={{ padding: '8px' }}>ID</th>
-                <th style={{ padding: '8px' }}>Type</th>
-                <th style={{ padding: '8px' }}>File</th>
-                <th style={{ padding: '8px' }}>Score</th>
-                <th style={{ padding: '8px' }}>Provider</th>
-                <th style={{ padding: '8px' }}>Fallback</th>
-                <th style={{ padding: '8px' }}>Created At</th>
+              <tr>
+                <th className={styles.numeric}>ID</th><th>Type</th><th>File</th><th className={styles.numeric}>Score</th><th>Provider</th><th>Fallback</th><th>Created At</th>
               </tr>
             </thead>
             <tbody>
               {analyses.items.map((a) => (
-                <tr key={a.id} style={{ borderBottom: '1px solid #eee' }}>
-                  <td style={{ padding: '8px' }}>{a.id}</td>
-                  <td style={{ padding: '8px' }}>{a.analysisType}</td>
-                  <td style={{ padding: '8px' }}>{a.fileName}</td>
-                  <td style={{ padding: '8px' }}>{a.resumeScore ?? a.matchScore ?? '-'}</td>
-                  <td style={{ padding: '8px' }}>{a.aiProvider}</td>
-                  <td style={{ padding: '8px' }}>{a.usedFallback ? 'Yes' : 'No'}</td>
-                  <td style={{ padding: '8px' }}>{new Date(a.createdAt).toLocaleString()}</td>
+                <tr key={a.id}>
+                  <td className={styles.numeric}>{a.id}</td><td><Badge tone={a.analysisType === 'RESUME' ? 'accent' : 'neutral'}>{a.analysisType}</Badge></td><td className={styles.primaryCell}>{a.fileName}</td><td className={styles.numeric}>{a.resumeScore ?? a.matchScore ?? '-'}</td><td>{a.aiProvider}</td><td><Badge tone={a.usedFallback ? 'warning' : 'success'}>{a.usedFallback ? 'Yes' : 'No'}</Badge></td><td>{new Date(a.createdAt).toLocaleString()}</td>
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         </section>
       )}
     </section>
