@@ -33,6 +33,7 @@ class OllamaConfig:
     timeout_seconds: float = 60.0
     temperature: float = 0.1
     malformed_json_retries: int = 1
+    keep_alive: int = -1
 
     def __post_init__(self) -> None:
         normalized_url = self.base_url.strip().rstrip("/")
@@ -56,10 +57,17 @@ class OllamaConfig:
         except ValueError as exc:
             raise ValueError("AI_TIMEOUT_SECONDS must be a number") from exc
 
+        keep_alive_env = os.getenv("OLLAMA_KEEP_ALIVE", "-1")
+        try:
+            keep_alive = int(keep_alive_env)
+        except ValueError:
+            keep_alive = -1
+
         return cls(
             base_url=os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"),
             model=os.getenv("OLLAMA_MODEL", "qwen3:4b"),
             timeout_seconds=timeout_seconds,
+            keep_alive=keep_alive,
         )
 
     @property
@@ -78,6 +86,18 @@ class OllamaClient:
         self.config = config or OllamaConfig.from_env()
         self._session = session or requests.Session()
 
+    def warmup(self) -> bool:
+        """Preload the model into memory with keep_alive to eliminate cold-start latency."""
+        try:
+            res = self._session.post(
+                self.config.generate_url,
+                json={"model": self.config.model, "keep_alive": self.config.keep_alive},
+                timeout=15.0,
+            )
+            return res.status_code == 200
+        except Exception:
+            return False
+
     def generate_json(self, system_prompt: str, user_prompt: str) -> Dict[str, Any]:
         payload = {
             "model": self.config.model,
@@ -85,6 +105,7 @@ class OllamaClient:
             "prompt": user_prompt,
             "stream": False,
             "format": "json",
+            "keep_alive": self.config.keep_alive,
             "options": {"temperature": self.config.temperature},
         }
         deadline = time.monotonic() + self.config.timeout_seconds

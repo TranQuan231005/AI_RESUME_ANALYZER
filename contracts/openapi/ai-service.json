@@ -199,11 +199,31 @@
             "title": "File",
             "description": "Resume PDF file (max 5 MB)"
           },
+          "jdFile": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "binary"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Jdfile",
+            "description": "Job description PDF file (max 5 MB, optional if jobDescription is provided)"
+          },
           "jobDescription": {
-            "type": "string",
-            "minLength": 50,
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Jobdescription",
-            "description": "Job description text"
+            "description": "Job description text (min 50 characters, optional if jdFile is provided)"
           },
           "targetRole": {
             "anyOf": [
@@ -220,8 +240,7 @@
         },
         "type": "object",
         "required": [
-          "file",
-          "jobDescription"
+          "file"
         ],
         "title": "Body_analyze_match_api_analyze_match_post"
       },
@@ -358,6 +377,18 @@
           "fileName": {
             "type": "string",
             "title": "Filename"
+          },
+          "jdFileName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Jdfilename",
+            "description": "Job description file name"
           },
           "targetRole": {
             "type": "string",

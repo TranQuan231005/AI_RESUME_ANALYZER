@@ -76,17 +76,18 @@ def match_skills(
 
 def _target_role(job_description: str, requested_role: str | None) -> str:
     if requested_role and requested_role.strip():
-        return requested_role.strip()
+        return requested_role.strip()[:120]
     for line in job_description.splitlines():
         title = line.strip()
         if title:
-            return title
+            return title[:120]
     return "Unspecified Role"
 
 
 def match_resume_to_job(
     *,
     file_name: str,
+    jd_file_name: str | None = None,
     resume_skills: Iterable[str],
     job_description: str,
     target_role: str | None = None,
@@ -102,6 +103,7 @@ def match_resume_to_job(
 
     return MatchResult(
         fileName=file_name,
+        jdFileName=jd_file_name,
         targetRole=_target_role(job_description, target_role),
         matchScore=evidence.match_score,
         matchedSkills=list(evidence.matched_skills),

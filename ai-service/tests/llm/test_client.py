@@ -104,6 +104,7 @@ def test_valid_json_returns_object_and_sends_json_mode_payload() -> None:
         "prompt": "resume data",
         "stream": False,
         "format": "json",
+        "keep_alive": -1,
         "options": {"temperature": 0.1},
     }
 

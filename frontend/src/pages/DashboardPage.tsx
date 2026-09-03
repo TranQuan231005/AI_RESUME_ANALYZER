@@ -12,6 +12,8 @@ export const DashboardPage: React.FC = () => {
 
   // Match analysis state
   const [matchFile, setMatchFile] = useState<File | null>(null);
+  const [jdFile, setJdFile] = useState<File | null>(null);
+  const [jdInputMode, setJdInputMode] = useState<'pdf' | 'text'>('pdf');
   const [jobDescription, setJobDescription] = useState<string>('');
   const [targetRole, setTargetRole] = useState<string>('');
 
@@ -61,11 +63,24 @@ export const DashboardPage: React.FC = () => {
     if (e.target.files && e.target.files[0]) {
       const selectedFile = e.target.files[0];
       if (selectedFile.type !== 'application/pdf') {
-        setError('Please select a valid PDF file.');
+        setError('Please select a valid PDF file for Candidate Resume.');
         setMatchFile(null);
         return;
       }
       setMatchFile(selectedFile);
+      setError(null);
+    }
+  };
+
+  const handleJdFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const selectedFile = e.target.files[0];
+      if (selectedFile.type !== 'application/pdf') {
+        setError('Please select a valid PDF file for Job Description.');
+        setJdFile(null);
+        return;
+      }
+      setJdFile(selectedFile);
       setError(null);
     }
   };
@@ -101,15 +116,22 @@ export const DashboardPage: React.FC = () => {
     }
   };
 
+  const isJdValid = jdInputMode === 'pdf' ? !!jdFile : jobDescription.trim().length >= 50;
+
   const handleMatchSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!matchFile) {
-      setError('Please select a PDF file before submitting.');
+      setError('Please select a Candidate Resume PDF file before submitting.');
       return;
     }
 
-    if (!jobDescription || jobDescription.trim().length < 50) {
+    if (jdInputMode === 'pdf' && !jdFile) {
+      setError('Please select a Job Description PDF file.');
+      return;
+    }
+
+    if (jdInputMode === 'text' && (!jobDescription || jobDescription.trim().length < 50)) {
       setError('Job description must be at least 50 characters.');
       return;
     }
@@ -125,9 +147,10 @@ export const DashboardPage: React.FC = () => {
     try {
       const response = await matchJobDescription(
         matchFile,
-        jobDescription,
+        jdInputMode === 'text' ? jobDescription : undefined,
         targetRole.trim() || undefined,
-        token
+        token,
+        jdInputMode === 'pdf' ? jdFile : null
       );
       navigate('/match/result', { state: { result: (response as any).result || response } });
     } catch (err: any) {
@@ -148,27 +171,27 @@ export const DashboardPage: React.FC = () => {
       <p>Analyze a resume and review your previous results.</p>
       <Link to="/resume/result">View latest result</Link>
 
-      <nav style={{ display: 'flex', gap: '1rem', margin: '1rem 0' }}>
+      <nav style={{ display: 'flex', gap: '0.75rem', margin: '1.25rem 0' }}>
         <button
           type="button"
+          className={activeTab === 'resume' ? 'input-mode-btn active' : 'input-mode-btn'}
           onClick={() => { setActiveTab('resume'); setError(null); }}
-          style={{ fontWeight: activeTab === 'resume' ? 'bold' : 'normal' }}
         >
-          Resume Scoring
+          📊 Resume Scoring
         </button>
         <button
           type="button"
+          className={activeTab === 'match' ? 'input-mode-btn active' : 'input-mode-btn'}
           onClick={() => { setActiveTab('match'); setError(null); }}
-          style={{ fontWeight: activeTab === 'match' ? 'bold' : 'normal' }}
         >
-          Job Match & ATS
+          🎯 Job Match & ATS
         </button>
         <button
           type="button"
+          className={activeTab === 'history' ? 'input-mode-btn active' : 'input-mode-btn'}
           onClick={() => { setActiveTab('history'); setError(null); }}
-          style={{ fontWeight: activeTab === 'history' ? 'bold' : 'normal' }}
         >
-          Analysis History
+          🕒 Analysis History
         </button>
       </nav>
 
@@ -195,45 +218,126 @@ export const DashboardPage: React.FC = () => {
 
       {activeTab === 'match' && (
         <form onSubmit={handleMatchSubmit} data-testid="match-form">
-          <div>
-            <label htmlFor="match-resume-file">Upload Resume (PDF)</label>
-            <input
-              id="match-resume-file"
-              type="file"
-              accept="application/pdf"
-              onChange={handleMatchFileChange}
-              disabled={isLoading}
-            />
+          <div className="match-grid">
+            {/* Card 1: Resume */}
+            <div className="upload-card">
+              <div className="upload-card-header">
+                <h3>📄 1. Candidate Resume</h3>
+                <span className="upload-badge">Required</span>
+              </div>
+              <label htmlFor="match-resume-file">Upload Candidate CV (PDF)</label>
+              <input
+                id="match-resume-file"
+                type="file"
+                accept="application/pdf"
+                onChange={handleMatchFileChange}
+                disabled={isLoading}
+              />
+              {matchFile ? (
+                <div className="file-selected-badge">
+                  <span>✓ {matchFile.name} ({(matchFile.size / 1024).toFixed(1)} KB)</span>
+                  <button
+                    type="button"
+                    className="file-clear-btn"
+                    onClick={() => setMatchFile(null)}
+                    title="Remove file"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ) : (
+                <small style={{ color: 'var(--text-muted)' }}>Max file size: 5 MB (PDF format)</small>
+              )}
+            </div>
+
+            {/* Card 2: Job Description */}
+            <div className="upload-card">
+              <div className="upload-card-header">
+                <h3>🎯 2. Job Description</h3>
+                <span className="upload-badge">Required</span>
+              </div>
+
+              <div className="input-mode-toggle">
+                <button
+                  type="button"
+                  data-testid="tab-jd-pdf"
+                  className={jdInputMode === 'pdf' ? 'input-mode-btn active' : 'input-mode-btn'}
+                  onClick={() => setJdInputMode('pdf')}
+                >
+                  📁 Upload JD (PDF)
+                </button>
+                <button
+                  type="button"
+                  data-testid="tab-jd-text"
+                  className={jdInputMode === 'text' ? 'input-mode-btn active' : 'input-mode-btn'}
+                  onClick={() => setJdInputMode('text')}
+                >
+                  ✍️ Paste JD Text
+                </button>
+              </div>
+
+              {jdInputMode === 'pdf' ? (
+                <div>
+                  <label htmlFor="match-jd-file">Upload Target Job Description (PDF)</label>
+                  <input
+                    id="match-jd-file"
+                    type="file"
+                    accept="application/pdf"
+                    onChange={handleJdFileChange}
+                    disabled={isLoading}
+                  />
+                  {jdFile ? (
+                    <div className="file-selected-badge" style={{ marginTop: '0.5rem' }}>
+                      <span>✓ {jdFile.name} ({(jdFile.size / 1024).toFixed(1)} KB)</span>
+                      <button
+                        type="button"
+                        className="file-clear-btn"
+                        onClick={() => setJdFile(null)}
+                        title="Remove file"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ) : (
+                    <small style={{ color: 'var(--text-muted)' }}>Upload any PDF job posting (Max: 5 MB)</small>
+                  )}
+                </div>
+              ) : (
+                <div>
+                  <label htmlFor="job-description">Job Description Text (min 50 chars)</label>
+                  <textarea
+                    id="job-description"
+                    rows={5}
+                    placeholder="Paste the target job description or requirements here..."
+                    value={jobDescription}
+                    onChange={(e) => setJobDescription(e.target.value)}
+                    disabled={isLoading}
+                  />
+                  <span
+                    className="char-counter"
+                    style={{ color: jobDescription.trim().length >= 50 ? 'var(--accent-emerald)' : 'var(--text-muted)' }}
+                  >
+                    {jobDescription.trim().length >= 50 ? '✓ ' : ''}{jobDescription.trim().length} / 50 characters min
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
 
-          <div style={{ marginTop: '1rem' }}>
-            <label htmlFor="target-role">Target Role (Optional)</label>
+          <div style={{ marginBottom: '1.5rem', maxWidth: '500px' }}>
+            <label htmlFor="target-role">Target Role (Optional title override)</label>
             <input
               id="target-role"
               type="text"
-              placeholder="e.g. Senior Frontend Developer"
+              placeholder="e.g. Senior Backend Engineer"
               value={targetRole}
               onChange={(e) => setTargetRole(e.target.value)}
               disabled={isLoading}
-              style={{ display: 'block', width: '100%', maxWidth: '400px', margin: '0.25rem 0' }}
             />
           </div>
 
-          <div style={{ marginTop: '1rem' }}>
-            <label htmlFor="job-description">Job Description (min 50 chars)</label>
-            <textarea
-              id="job-description"
-              rows={6}
-              placeholder="Paste the full job description or requirements here..."
-              value={jobDescription}
-              onChange={(e) => setJobDescription(e.target.value)}
-              disabled={isLoading}
-              style={{ display: 'block', width: '100%', maxWidth: '600px', margin: '0.25rem 0' }}
-            />
-          </div>
-
-          <button type="submit" disabled={isLoading || !matchFile || jobDescription.trim().length < 50}>
-            {isLoading ? 'Matching...' : 'Analyze Match'}
+          <button type="submit" disabled={isLoading || !matchFile || !isJdValid}>
+            {isLoading ? 'Running Match & ATS Analysis...' : '⚡ Run Job Match & ATS Analysis'}
           </button>
         </form>
       )}

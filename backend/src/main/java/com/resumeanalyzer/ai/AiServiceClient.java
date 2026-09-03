@@ -56,7 +56,7 @@ public class AiServiceClient {
         }
     }
 
-    public JsonNode analyzeMatch(MultipartFile file, String jobDescription, String targetRole) {
+    public JsonNode analyzeMatch(MultipartFile file, MultipartFile jdFile, String jobDescription, String targetRole) {
         try {
             ByteArrayResource fileResource = new ByteArrayResource(file.getBytes()) {
                 @Override
@@ -67,7 +67,21 @@ public class AiServiceClient {
 
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
             body.add("file", fileResource);
-            body.add("jobDescription", jobDescription);
+
+            if (jdFile != null && !jdFile.isEmpty()) {
+                ByteArrayResource jdResource = new ByteArrayResource(jdFile.getBytes()) {
+                    @Override
+                    public String getFilename() {
+                        return jdFile.getOriginalFilename() != null ? jdFile.getOriginalFilename() : "job_description.pdf";
+                    }
+                };
+                body.add("jdFile", jdResource);
+            }
+
+            if (jobDescription != null && !jobDescription.isBlank()) {
+                body.add("jobDescription", jobDescription);
+            }
+
             if (targetRole != null && !targetRole.isBlank()) {
                 body.add("targetRole", targetRole);
             }
@@ -91,5 +105,9 @@ public class AiServiceClient {
         } catch (IOException ex) {
             throw new InvalidPdfException("Failed to read uploaded PDF: " + ex.getMessage());
         }
+    }
+
+    public JsonNode analyzeMatch(MultipartFile file, String jobDescription, String targetRole) {
+        return analyzeMatch(file, null, jobDescription, targetRole);
     }
 }
