@@ -2,7 +2,7 @@
 
 ## 1. Overview & Dataset Provenance
 - **Dataset Version:** `2.0.0-controlled-synthetic`
-- **Evaluation Date:** `2026-09-07T09:55:42.240377+00:00`
+- **Evaluation Date:** `2026-09-07T11:33:21.504721+00:00`
 - **Test Set Size:** 100 samples (50 in-domain + 50 held-out OOD)
 - **Classes Evaluated (6):** Android Development, Data Science, UI/UX, Web Development, iOS Development, Unknown
 - **Model Type:** `Logistic Regression`
@@ -17,7 +17,7 @@
 | **Accuracy** | 78.00% | **100.00%** | +22.00% |
 | **Macro F1** | 0.8611 | **1.0000** | +0.1389 |
 | **Weighted F1** | 0.8611 | **1.0000** | +0.1389 |
-| **Avg Latency** | 0.64 ms | 1.92 ms | - |
+| **Avg Latency** | 0.31 ms | 1.33 ms | - |
 
 ## 3. Unknown/OOD Performance
 - **In-domain accuracy:** 1.0000
@@ -51,10 +51,10 @@
 | **Unknown** | 0 | 0 | 0 | 0 | 0 | 50 |
 
 ## 6. Inference Latency Benchmark
-- **Mean Latency:** 1.92 ms per resume
-- **p50 Latency:** 1.53 ms
-- **p95 Latency:** 4.86 ms
-- **p99 Latency:** 6.35 ms
+- **Mean Latency:** 1.33 ms per resume
+- **p50 Latency:** 1.14 ms
+- **p95 Latency:** 2.52 ms
+- **p99 Latency:** 3.97 ms
 
 ## 7. Model Hyperparameters & Configuration
 ```json
