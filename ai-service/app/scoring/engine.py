@@ -14,10 +14,36 @@ def calculate_score(document: ParsedDocument, features: ResumeFeatures) -> Score
         contact_score += 2.5
     contact = min(5, max(0, int(contact_score)))
 
+    ALL_SECTION_HEADERS = [
+        "summary", "profile", "professional summary", "about me", "objective",
+        "education", "academic background", "qualifications", "academic history",
+        "experience", "employment", "work history", "work experience", "professional experience",
+        "projects", "personal projects", "academic projects", "key projects",
+        "achievements", "certifications", "awards", "certificates", "honors",
+        "skills", "technical skills", "core competencies", "technologies",
+        "languages", "interests", "activities", "publications", "references", "contact",
+    ]
+    all_headers_pattern = r"|".join(re.escape(h) for h in ALL_SECTION_HEADERS)
+
     def extract_section_content(headers: list) -> str:
-        pattern = r"(?i)(?:^|\n)\s*(?:" + "|".join(headers) + r")\b[:\s]*\n?(.*?)(?=\n\s*[A-Z][A-Za-z\s]{2,20}:|\Z)"
-        match = re.search(pattern, text, re.DOTALL)
-        return match.group(1).strip() if match else ""
+        target_pattern = r"|".join(re.escape(h) for h in headers)
+        # Bắt đầu tại header mục tiêu, kết thúc tại header kế tiếp (có hoặc không có dấu hai chấm) hoặc cuối văn bản
+        pattern = (
+            rf"(?im)^[ \t]*(?:{target_pattern})\b[ \t]*:?[ \t]*\n+"
+            rf"([\s\S]*?)"
+            rf"(?=^[ \t]*(?:{all_headers_pattern})\b[ \t]*:?[ \t]*$|\Z)"
+        )
+        match = re.search(pattern, text)
+        if match:
+            return match.group(1).strip()
+        # Fallback tìm kiếm inline/loose nếu không ở đầu dòng riêng
+        loose_pattern = (
+            rf"(?i)(?:^|\n)[ \t]*(?:{target_pattern})\b[:\s]*\n?"
+            rf"(.*?)"
+            rf"(?=\n[ \t]*(?:{all_headers_pattern})\b[:\s]*|\Z)"
+        )
+        loose_match = re.search(loose_pattern, text, re.DOTALL)
+        return loose_match.group(1).strip() if loose_match else ""
 
     summary_content = extract_section_content(["summary", "profile", "professional summary", "about me"])
     if len(summary_content) >= 20:

@@ -10,10 +10,22 @@ def sanitize_filename(filename: str) -> str:
     return re.sub(r'[^a-zA-Z0-9_\-\.]+', '_', filename).strip('_')
 
 def normalize_text(text: str) -> str:
-    """Chuẩn hóa Unicode (NFKC) và gom nhóm khoảng trắng liền mạch."""
+    """Chuẩn hóa Unicode (NFKC), gom khoảng trắng ngang trên từng dòng và giữ lại các dòng ngắt đoạn."""
     text = unicodedata.normalize('NFKC', text)
-    text = re.sub(r'\s+', ' ', text).strip()
-    return text
+    # Gom khoảng trắng ngang trong từng dòng
+    lines = [re.sub(r'[^\S\r\n]+', ' ', line).strip() for line in text.splitlines()]
+    # Loại bỏ dòng trống thừa liên tiếp (tối đa 2 dòng trống liên tiếp để giữ paragraph/section break)
+    normalized_lines = []
+    empty_count = 0
+    for line in lines:
+        if not line:
+            empty_count += 1
+            if empty_count <= 2:
+                normalized_lines.append("")
+        else:
+            empty_count = 0
+            normalized_lines.append(line)
+    return "\n".join(normalized_lines).strip()
 
 def extract_pdf_content(file_bytes: bytes, original_filename: str) -> ParsedDocument:
     size_bytes = len(file_bytes)
@@ -29,7 +41,7 @@ def extract_pdf_content(file_bytes: bytes, original_filename: str) -> ParsedDocu
             if page_text:
                 extracted_text_parts.append(page_text)
                 
-        raw_text = " ".join(extracted_text_parts)
+        raw_text = "\n\n".join(extracted_text_parts)
         final_text = normalize_text(raw_text)
         
         if not final_text or len(final_text) < 10: 

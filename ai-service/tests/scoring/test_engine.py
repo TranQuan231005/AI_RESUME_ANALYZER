@@ -176,3 +176,44 @@ def test_contract_field_aliases():
     assert "quantifiedImpact" in dumped
     assert "achievements_certifications" not in dumped
     assert "quantified_impact" not in dumped
+
+
+def test_section_boundary_without_colons():
+    """Đảm bảo section Experience không nuốt Education hay Projects khi không có dấu hai chấm."""
+    text = (
+        "John Doe\njohn@example.com\n\n"
+        "SUMMARY\nExperienced engineer with passion for building scalable web apps.\n\n"
+        "EXPERIENCE\nBuilt backend microservices and APIs with Java and Spring.\n\n"
+        "EDUCATION\nBachelor of Science in Computer Science.\n\n"
+        "PROJECTS\nBuilt cloud platform with React and Python.\n\n"
+        "CERTIFICATIONS\nAWS Certified Developer."
+    )
+    doc = ParsedDocument(
+        fileName="no_colons.pdf",
+        text=text,
+        pageCount=1,
+        sizeBytes=1024,
+    )
+    features = ResumeFeatures(
+        candidateName="John Doe",
+        candidateEmail="john@example.com",
+        skills=["Java", "Spring", "React", "Python"],
+        predictedField="Web Development",
+        fieldEvidence=[],
+    )
+    result = calculate_score(doc, features)
+    assert result.summary > 0
+    assert result.experience > 0
+    assert result.education > 0
+    assert result.projects > 0
+    assert result.achievements_certifications > 0
+    assert result.total == (
+        result.contact
+        + result.summary
+        + result.skills
+        + result.education
+        + result.experience
+        + result.projects
+        + result.achievements_certifications
+        + result.quantified_impact
+    )

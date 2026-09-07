@@ -215,15 +215,14 @@
           "jobDescription": {
             "anyOf": [
               {
-                "type": "string",
-                "minLength": 50
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
             "title": "Jobdescription",
-            "description": "Job description text (min 50 characters, optional if jdFile is provided)"
+            "description": "Job description text (optional if jdFile is provided)"
           },
           "targetRole": {
             "anyOf": [
@@ -387,8 +386,7 @@
                 "type": "null"
               }
             ],
-            "title": "Jdfilename",
-            "description": "Job description file name"
+            "title": "Jdfilename"
           },
           "targetRole": {
             "type": "string",
