@@ -1,0 +1,26 @@
+{
+  "datasetVersion": "1.0.0",
+  "totalPairs": 25,
+  "domainDistribution": {
+    "Data Science": 6,
+    "Web Development": 6,
+    "Android Development": 3,
+    "iOS Development": 3,
+    "UI/UX": 4,
+    "Cross-Domain": 3
+  },
+  "scenarioDistribution": {
+    "standard_match": 6,
+    "partial_match": 5,
+    "paraphrase_match": 5,
+    "missing_required_skill": 2,
+    "keyword_stuffing": 2,
+    "cross_domain": 3,
+    "no_skills_jd": 2
+  },
+  "scoreRange": {
+    "min": 10,
+    "max": 96,
+    "mean": 58.48
+  }
+}

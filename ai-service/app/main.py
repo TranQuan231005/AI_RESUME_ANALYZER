@@ -12,7 +12,14 @@ from app.document.parser import extract_pdf_content
 from app.extraction.classifier import classify_features
 from app.extraction.features import extract_features
 from app.extraction.router import router as extraction_router
+from app.ml.classifier import classify_resume_features_ml
 from app.llm.client import OllamaClient
+from app.llm.prompts import (
+    build_jd_matching_prompt,
+    build_resume_recommendation_prompt,
+    validate_and_sanitize_match_insights,
+    validate_and_sanitize_resume_recommendations,
+)
 from app.matching.engine import match_resume_to_job
 from app.recommendation.engine import generate_recommendations
 from app.schemas import (
@@ -96,41 +103,20 @@ def _enrich_resume_with_llm(
     score_breakdown: ScoreBreakdown,
     rule_recs: dict,
 ) -> tuple[list[str], list[str], bool, str]:
-    """Attempt to enrich recommendations using Ollama; fall back gracefully on failure."""
-    system_prompt = (
-        "You are an expert technical recruiter and resume reviewer. "
-        "Analyze the provided resume details and return actionable recommendations. "
-        "You MUST respond ONLY with a valid JSON object in this exact schema:\n"
-        "{\n"
-        '  "recommendedSkills": ["skill1", "skill2"],\n'
-        '  "recommendations": ["advice 1", "advice 2"]\n'
-        "}\n"
-        "Constraints:\n"
-        "- recommendedSkills: array of up to 8 strings.\n"
-        "- recommendations: array of up to 8 concise improvement bullet points.\n"
-        "- Do not include markdown fences or any text outside the JSON object."
-    )
-    user_prompt = (
-        f"Candidate Field: {features.predicted_field}\n"
-        f"Current Skills: {', '.join(features.skills) if features.skills else 'None'}\n"
-        f"Total Score: {score_breakdown.total}/100\n"
-        f"Score Breakdown: Contact={score_breakdown.contact}/5, Summary={score_breakdown.summary}/10, "
-        f"Skills={score_breakdown.skills}/15, Education={score_breakdown.education}/10, "
-        f"Experience={score_breakdown.experience}/20, Projects={score_breakdown.projects}/15, "
-        f"Certifications={score_breakdown.achievements_certifications}/10, "
-        f"Impact={score_breakdown.quantified_impact}/15\n\n"
-        f"Resume Text Excerpt:\n{resume_text[:2000]}"
+    """Attempt to enrich recommendations using Ollama v2 prompt; fall back gracefully on failure."""
+    system_prompt, user_prompt, prompt_def = build_resume_recommendation_prompt(
+        resume_text=resume_text,
+        features=features,
+        score_breakdown=score_breakdown,
     )
     try:
         data = client.generate_json(system_prompt, user_prompt)
-        llm_skills = data.get("recommendedSkills")
-        llm_recs = data.get("recommendations")
-        if isinstance(llm_skills, list) and isinstance(llm_recs, list):
-            cleaned_skills = [str(s).strip() for s in llm_skills if s and str(s).strip()][:8]
-            cleaned_recs = [str(r).strip() for r in llm_recs if r and str(r).strip()][:8]
-            final_skills = cleaned_skills if cleaned_skills else rule_recs.get("recommendedSkills", [])[:8]
-            final_recs = cleaned_recs if cleaned_recs else rule_recs.get("recommendations", [])[:8]
-            return final_skills[:8], final_recs[:8], False, client.config.model
+        final_skills, final_recs = validate_and_sanitize_resume_recommendations(
+            raw_response=data,
+            existing_skills=list(features.skills),
+            rule_fallback=rule_recs,
+        )
+        return final_skills, final_recs, False, client.config.model
     except Exception:
         pass
 
@@ -150,65 +136,29 @@ def _enrich_match_with_llm(
     target_role: str,
     rule_match: MatchResult,
 ) -> tuple[list[str], list[str], list[str], list[str], bool, str]:
-    """Attempt to enrich match insights with Ollama; fall back gracefully on failure."""
-    system_prompt = (
-        "You are an expert ATS (Applicant Tracking System) parser and senior technical recruiter. "
-        "Analyze the candidate's resume against the target job description. "
-        "You MUST respond ONLY with a valid JSON object in this exact schema:\n"
-        "{\n"
-        '  "atsKeywords": ["keyword1", "keyword2"],\n'
-        '  "strengths": ["strength 1", "strength 2"],\n'
-        '  "weaknesses": ["gap 1", "gap 2"],\n'
-        '  "recommendations": ["recommendation 1", "recommendation 2"]\n'
-        "}\n"
-        "Constraints:\n"
-        "- atsKeywords: array of up to 15 strings (high-priority keywords from JD).\n"
-        "- strengths: array of up to 6 strings highlighting candidate qualifications.\n"
-        "- weaknesses: array of up to 6 strings highlighting missing qualifications/skills.\n"
-        "- recommendations: array of up to 8 actionable suggestions for tailoring the CV.\n"
-        "- Do not include markdown fences or any text outside the JSON object."
-    )
-    user_prompt = (
-        f"Target Role: {target_role}\n"
-        f"Candidate Extracted Skills: {', '.join(features.skills) if features.skills else 'None'}\n"
-        f"Matched Skills: {', '.join(rule_match.matched_skills)}\n"
-        f"Missing Skills: {', '.join(rule_match.missing_skills)}\n"
-        f"Rule Match Score: {rule_match.match_score}%\n\n"
-        f"Job Description:\n{job_description[:2500]}\n\n"
-        f"Resume Text Excerpt:\n{resume_text[:2000]}"
+    """Attempt to enrich match insights with Ollama v2 prompt; fall back gracefully on failure."""
+    system_prompt, user_prompt, prompt_def = build_jd_matching_prompt(
+        resume_text=resume_text,
+        features=features,
+        job_description=job_description,
+        target_role=target_role,
+        rule_match=rule_match,
     )
     try:
         data = client.generate_json(system_prompt, user_prompt)
-        ats_keywords = data.get("atsKeywords")
-        strengths = data.get("strengths")
-        weaknesses = data.get("weaknesses")
-        recommendations = data.get("recommendations")
-        if (
-            isinstance(ats_keywords, list)
-            and isinstance(strengths, list)
-            and isinstance(weaknesses, list)
-            and isinstance(recommendations, list)
-        ):
-            cleaned_ats = [str(k).strip() for k in ats_keywords if k and str(k).strip()][:15]
-            cleaned_str = [str(s).strip() for s in strengths if s and str(s).strip()][:6]
-            cleaned_weak = [str(w).strip() for w in weaknesses if w and str(w).strip()][:6]
-            cleaned_recs = [str(r).strip() for r in recommendations if r and str(r).strip()][:8]
-            return (
-                cleaned_ats,
-                cleaned_str,
-                cleaned_weak,
-                cleaned_recs if cleaned_recs else rule_match.recommendations[:8],
-                False,
-                client.config.model,
-            )
+        ats, strengths, weaknesses, recs = validate_and_sanitize_match_insights(
+            raw_response=data,
+            rule_match=rule_match,
+        )
+        return ats, strengths, weaknesses, recs, False, client.config.model
     except Exception:
         pass
 
     return (
-        [],
-        [],
-        [],
-        rule_match.recommendations[:8],
+        list(rule_match.ats_keywords)[:15],
+        list(rule_match.strengths)[:6],
+        list(rule_match.weaknesses)[:6],
+        list(rule_match.recommendations)[:8],
         True,
         "deterministic-v1",
     )
@@ -235,7 +185,7 @@ async def analyze_resume(
 
     # 1. Feature extraction & field classification
     raw_features = extract_features(parsed_doc.text)
-    classified_features = classify_features(raw_features)
+    classified_features = classify_resume_features_ml(parsed_doc.text, raw_features)
 
     field_evidence = [
         SchemaFieldEvidence(
@@ -360,7 +310,7 @@ async def analyze_match(
 
     # 1. Feature extraction
     raw_features = extract_features(parsed_doc.text)
-    classified_features = classify_features(raw_features)
+    classified_features = classify_resume_features_ml(parsed_doc.text, raw_features)
 
     predicted_enum = (
         FieldEnum(classified_features.predicted_field)
@@ -376,12 +326,13 @@ async def analyze_match(
         fieldEvidence=[],
     )
 
-    # 2. Deterministic rule matching
+    # 2. Deterministic & Hybrid matching
     rule_match = match_resume_to_job(
         file_name=parsed_doc.fileName,
         jd_file_name=jd_file_name,
         resume_skills=schema_features.skills,
         job_description=jd_text,
+        resume_text=parsed_doc.text,
         target_role=targetRole,
     )
 

@@ -84,37 +84,89 @@ def _target_role(job_description: str, requested_role: str | None) -> str:
     return "Unspecified Role"
 
 
+def compute_lexical_similarity(resume_text: str, job_description: str) -> float:
+    """Compute sublinear TF-IDF cosine similarity between resume and job description."""
+    if not isinstance(resume_text, str) or not isinstance(job_description, str):
+        return 0.0
+    if not resume_text.strip() or not job_description.strip():
+        return 0.0
+    try:
+        from sklearn.feature_extraction.text import TfidfVectorizer
+        from sklearn.metrics.pairwise import cosine_similarity
+
+        vec = TfidfVectorizer(lowercase=True, stop_words="english", ngram_range=(1, 2), sublinear_tf=True)
+        matrix = vec.fit_transform([resume_text, job_description])
+        sim = float(cosine_similarity(matrix[0:1], matrix[1:2])[0][0])
+        return round(max(0.0, min(100.0, sim * 100.0)), 2)
+    except Exception:
+        return 0.0
+
+
 def match_resume_to_job(
     *,
     file_name: str,
     jd_file_name: str | None = None,
     resume_skills: Iterable[str],
     job_description: str,
+    resume_text: str | None = None,
     target_role: str | None = None,
     processing_ms: int = 0,
+    alpha: float = 0.80,
 ) -> MatchResult:
-    """Build a contract-compatible rule-based MatchResult from skill evidence."""
-    evidence = match_skills(resume_skills, extract_jd_skills(job_description))
-    recommendations = []
+    """Build a contract-compatible hybrid MatchResult from skill evidence and semantic alignment."""
+    jd_skills = extract_jd_skills(job_description)
+    evidence = match_skills(resume_skills, jd_skills)
+    
+    recommendations: list[str] = []
+    strengths: list[str] = []
+    weaknesses: list[str] = []
+
+    if evidence.matched_skills:
+        strengths.append(f"Matched {len(evidence.matched_skills)} required skill(s): {', '.join(evidence.matched_skills[:4])}")
+    if evidence.missing_skills:
+        weaknesses.append(f"Missing {len(evidence.missing_skills)} required skill(s): {', '.join(evidence.missing_skills[:4])}")
+        recommendations.append(f"Add experience or certifications in {', '.join(evidence.missing_skills[:3])} to strengthen fit.")
+
     if not evidence.matched_skills and not evidence.missing_skills:
         recommendations.append(
             "Provide a more specific job description with recognizable technical skills."
         )
 
+    # If resume_text is supplied, compute calibrated hybrid score
+    if resume_text and resume_text.strip():
+        lexical_score = compute_lexical_similarity(resume_text, job_description)
+        if len(jd_skills) == 0:
+            final_score = round(lexical_score)
+        else:
+            # Check for keyword stuffing: high raw skill count but low semantic cohesion
+            normalized_skills = list(normalize_skills(resume_skills))
+            is_stuffing = len(normalized_skills) >= 10 and lexical_score < 25.0
+            if is_stuffing:
+                raw_hybrid = (alpha * evidence.match_score) + ((1.0 - alpha) * lexical_score)
+                final_score = round(raw_hybrid * 0.4)
+                weaknesses.append("High volume of disjoint skills detected without relevant project context.")
+            else:
+                raw_hybrid = (alpha * evidence.match_score) + ((1.0 - alpha) * lexical_score)
+                final_score = round(min(100.0, max(0.0, raw_hybrid)))
+        model_name = "hybrid-lexical-semantic-v1"
+    else:
+        final_score = evidence.match_score
+        model_name = "deterministic-v1"
+
     return MatchResult(
         fileName=file_name,
         jdFileName=jd_file_name,
         targetRole=_target_role(job_description, target_role),
-        matchScore=evidence.match_score,
+        matchScore=final_score,
         matchedSkills=list(evidence.matched_skills),
         missingSkills=list(evidence.missing_skills),
-        atsKeywords=[],
-        strengths=[],
-        weaknesses=[],
-        recommendations=recommendations,
+        atsKeywords=list(evidence.matched_skills)[:10],
+        strengths=strengths[:6],
+        weaknesses=weaknesses[:6],
+        recommendations=recommendations[:8],
         ai=AiMetadata(
             provider=AiProvider.RULE_BASED,
-            model="deterministic-v1",
+            model=model_name,
             usedFallback=True,
             processingMs=max(0, processing_ms),
         ),
