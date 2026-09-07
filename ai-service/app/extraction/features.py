@@ -16,7 +16,10 @@ class ResumeFeatures:
 
 EMAIL_PATTERN = re.compile(r"\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b", re.IGNORECASE)
 URL_PATTERN = re.compile(r"(?:https?://|www\.)\S+|\b(?:github\.com|linkedin\.com)\S*", re.IGNORECASE)
-NAME_PATTERN = re.compile(r"^(?:name\s*:\s*)?([A-Za-z]+(?:[ '-][A-Za-z]+){1,5})$", re.IGNORECASE)
+NAME_PATTERN = re.compile(
+    r"^(?:name\s*:\s*)?((?:(?:Dr|Mr|Ms|Mrs)\.?\s+)?[A-Za-z]+(?:[ '-][A-Za-z]+){1,5})$",
+    re.IGNORECASE,
+)
 IGNORED_HEADINGS = {
     "resume",
     "curriculum vitae",
@@ -31,6 +34,7 @@ IGNORED_HEADINGS = {
     "experience",
     "education",
     "skills",
+    "technical skills",
     "projects",
 }
 NON_NAME_TERMS = {

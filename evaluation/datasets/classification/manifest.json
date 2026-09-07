@@ -1,0 +1,80 @@
+{
+  "version": "2.0.0",
+  "randomSeed": 42,
+  "classes": [
+    "Android Development",
+    "Data Science",
+    "UI/UX",
+    "Web Development",
+    "iOS Development"
+  ],
+  "totalSamples": 350,
+  "classSummary": {
+    "Data Science": 50,
+    "Web Development": 50,
+    "Android Development": 50,
+    "iOS Development": 50,
+    "UI/UX": 50,
+    "Unknown": 100
+  },
+  "splitSummary": {
+    "train": {
+      "total_samples": 175,
+      "class_distribution": {
+        "Data Science": 35,
+        "Web Development": 35,
+        "Android Development": 35,
+        "iOS Development": 35,
+        "UI/UX": 35
+      },
+      "source_distribution": {
+        "synthetic": 175
+      }
+    },
+    "validation": {
+      "total_samples": 25,
+      "class_distribution": {
+        "Data Science": 5,
+        "Web Development": 5,
+        "Android Development": 5,
+        "iOS Development": 5,
+        "UI/UX": 5
+      },
+      "source_distribution": {
+        "synthetic": 25
+      }
+    },
+    "test": {
+      "total_samples": 50,
+      "class_distribution": {
+        "Data Science": 10,
+        "Web Development": 10,
+        "Android Development": 10,
+        "iOS Development": 10,
+        "UI/UX": 10
+      },
+      "source_distribution": {
+        "synthetic": 50
+      }
+    },
+    "ood-validation": {
+      "total_samples": 50,
+      "class_distribution": {
+        "Unknown": 50
+      },
+      "source_distribution": {
+        "synthetic": 50
+      }
+    },
+    "ood-test": {
+      "total_samples": 50,
+      "class_distribution": {
+        "Unknown": 50
+      },
+      "source_distribution": {
+        "synthetic": 50
+      }
+    }
+  },
+  "validationStatus": "PASSED"
+}

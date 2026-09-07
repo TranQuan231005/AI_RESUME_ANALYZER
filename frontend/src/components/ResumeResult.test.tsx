@@ -29,6 +29,7 @@ describe('ResumeResult', () => {
     expect(screen.getByTestId('score-breakdown').textContent).toContain('Achievements: 5/10');
     expect(screen.getByTestId('score-breakdown').textContent).toContain('Impact: 8/15');
     expect(screen.getByTestId('evidence-section').textContent).toContain('Python, Pandas');
+    expect(screen.getByTestId('evidence-section').textContent).toContain('machine learning');
     expect(screen.getByTestId('recommended-skills').textContent).toContain('Machine Learning');
     expect(screen.getByTestId('recommendations').textContent).toContain('business impact');
     expect(screen.queryByTestId('fallback-badge')).toBeNull();

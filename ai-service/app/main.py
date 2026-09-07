@@ -13,6 +13,8 @@ from app.extraction.classifier import classify_features
 from app.extraction.features import extract_features
 from app.extraction.router import router as extraction_router
 from app.ml.classifier import classify_resume_features_ml
+from app.ml.model_loader import get_model_metadata, load_classifier_model
+from app.matching.embedding import EMBEDDING_MODEL_ID, load_embedding_model
 from app.llm.client import OllamaClient
 from app.llm.prompts import (
     build_jd_matching_prompt,
@@ -89,10 +91,17 @@ async def health_check() -> HealthResponse:
     except Exception:
         ollama_reachable = False
 
+    classifier_loaded = load_classifier_model() is not None
+    embedding_loaded = load_embedding_model() is not None
+
     return HealthResponse(
         status="healthy",
         model=client.config.model,
         ollama_reachable=ollama_reachable,
+        classifierLoaded=classifier_loaded,
+        classifierModel=(get_model_metadata() or {}).get("modelType") if classifier_loaded else None,
+        embeddingModelLoaded=embedding_loaded,
+        embeddingModel=EMBEDDING_MODEL_ID if embedding_loaded else None,
     )
 
 
@@ -192,6 +201,7 @@ async def analyze_resume(
             field=FieldEnum(ev["field"]) if ev["field"] in [f.value for f in FieldEnum] else FieldEnum.UNKNOWN,
             matchedSkills=ev.get("matchedSkills", []),
             confidence=float(ev.get("confidence", 0.0)),
+            topTerms=ev.get("topTerms", []),
         )
         for ev in (classified_features.field_evidence or [])
     ]
@@ -360,6 +370,7 @@ async def analyze_match(
         strengths=strengths,
         weaknesses=weaknesses,
         recommendations=recommendations,
+        matchBreakdown=rule_match.match_breakdown,
         ai=AiMetadata(
             provider=AiProvider.RULE_BASED if used_fallback else AiProvider.OLLAMA,
             model=model_name,

@@ -49,3 +49,19 @@ def test_internal_and_public_openapi_use_the_same_frozen_match_field_names():
     assert set(public_properties) == frozen_fields
     assert set(internal_required) == {"file"}
     assert set(public_required) == {"file"}
+
+
+def test_internal_and_public_contracts_expose_ml_evidence_and_match_breakdown():
+    internal = app.openapi()["components"]["schemas"]
+    public = json.loads(
+        (ROOT / "contracts/openapi/public-api.json").read_text(encoding="utf-8")
+    )["components"]["schemas"]
+
+    analysis_evidence = internal["app__schemas__features__FieldEvidence"]
+    assert "topTerms" in analysis_evidence["properties"]
+    assert "topTerms" in public["FieldEvidence"]["properties"]
+    assert "matchBreakdown" in internal["MatchResult"]["properties"]
+    assert "matchBreakdown" in public["MatchResult"]["properties"]
+    expected_methods = {"HYBRID_EMBEDDING", "SKILL_ONLY"}
+    assert set(internal["MatchBreakdown"]["properties"]["method"]["enum"]) == expected_methods
+    assert set(public["MatchBreakdown"]["properties"]["method"]["enum"]) == expected_methods

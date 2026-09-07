@@ -57,23 +57,21 @@ export const ResumeResult: React.FC<ResumeResultProps> = ({
       </section>
 
       <div className={styles.contentGrid}>
-        {fieldEvidence.length > 0 && (
         <section className={styles.contentSection} data-testid="evidence-section">
           <h3><MagnifyingGlass size={19} weight="bold" aria-hidden="true" />Evidence</h3>
-          <ul className={styles.tags}>
+          {fieldEvidence.length === 0 ? <p>No classification evidence was found.</p> : <ul className={styles.recommendations}>
             {fieldEvidence.map((item, index) => {
-              const evidenceDetail = (item.matchedSkills && item.matchedSkills.length > 0)
-                ? item.matchedSkills.join(', ')
-                : (item.topTerms && item.topTerms.length > 0 ? item.topTerms.join(', ') : 'Direct match');
               return (
-                <li className={styles.tag} key={`${item.field}-${index}`}>
-                  {item.field}: {evidenceDetail} ({Math.round(item.confidence * 100)}%)
+                <li key={`${item.field}-${index}`}>
+                  <strong>{item.field}</strong> — confidence {Math.round(item.confidence * 100)}%
+                  <div>Influential terms: {item.topTerms?.length ? item.topTerms.join(', ') : 'No model terms available'}</div>
+                  <div>Taxonomy skills: {item.matchedSkills.length ? item.matchedSkills.join(', ') : 'No taxonomy skill evidence'}</div>
                 </li>
               );
             })}
           </ul>
+          }
         </section>
-        )}
 
       {recommendedSkills.length > 0 && (
         <section className={styles.contentSection} data-testid="recommended-skills">

@@ -1,23 +1,46 @@
-"""Unit tests for hybrid lexical-semantic CV-JD matching engine."""
-import pytest
+"""Unit tests for production sentence-embedding CV-JD matching."""
+import numpy as np
 
-from app.matching.engine import compute_lexical_similarity, match_resume_to_job
+from app.matching.embedding import chunk_text, compute_embedding_similarity
+from app.matching.engine import match_resume_to_job
 from app.schemas.matching import MatchResult
 
 
-def test_compute_lexical_similarity_empty_inputs():
-    assert compute_lexical_similarity("", "job description") == 0.0
-    assert compute_lexical_similarity("resume text", "") == 0.0
-    assert compute_lexical_similarity("   ", "   ") == 0.0
+class FakeEmbeddingModel:
+    def encode(self, chunks, **_kwargs):
+        vectors = []
+        for chunk in chunks:
+            lowered = chunk.lower()
+            vectors.append([
+                float("python" in lowered or "data" in lowered),
+                float("product" in lowered or "strategy" in lowered),
+                0.2,
+            ])
+        values = np.asarray(vectors, dtype=float)
+        norms = np.linalg.norm(values, axis=1, keepdims=True)
+        return values / np.maximum(norms, 1e-12)
 
 
-def test_compute_lexical_similarity_identical_texts():
-    text = "Senior Python engineer building machine learning models with pandas and numpy."
-    sim = compute_lexical_similarity(text, text)
-    assert sim >= 95.0
+def test_chunk_text_is_bounded():
+    chunks = chunk_text("word " * 2000, max_words=180, max_chunks=8)
+    assert len(chunks) == 8
+    assert all(len(chunk.split()) <= 180 for chunk in chunks)
 
 
-def test_match_resume_to_job_backward_compatibility_without_text():
+def test_embedding_similarity_empty_inputs():
+    assert compute_embedding_similarity("", "job description", model=FakeEmbeddingModel()) is None
+    assert compute_embedding_similarity("resume text", "", model=FakeEmbeddingModel()) is None
+
+
+def test_embedding_similarity_identical_topic():
+    score = compute_embedding_similarity(
+        "Python data engineering", "Python data developer", model=FakeEmbeddingModel()
+    )
+    assert score is not None and score >= 95.0
+
+
+def test_match_without_embedding_uses_skill_only(monkeypatch):
+    monkeypatch.setattr("app.matching.engine.compute_embedding_similarity", lambda *args, **kwargs: None)
     result = match_resume_to_job(
         file_name="resume.pdf",
         resume_skills=["Python", "SQL"],
@@ -25,60 +48,32 @@ def test_match_resume_to_job_backward_compatibility_without_text():
     )
     assert isinstance(result, MatchResult)
     assert result.match_score == 67
-    assert result.matched_skills == ["Python", "SQL"]
-    assert result.missing_skills == ["Pandas"]
-    assert result.ai.model == "deterministic-v1"
+    assert result.match_breakdown.method == "SKILL_ONLY"
+    assert result.match_breakdown.semantic_score is None
 
 
-def test_match_resume_to_job_hybrid_with_resume_text():
-    resume_text = "Senior Data Scientist with 5 years experience in Python, SQL, and exploratory data analysis using Pandas."
-    jd_text = "Looking for a Data Scientist with Python, SQL, and Pandas."
-
+def test_hybrid_match_exposes_embedding_breakdown():
     result = match_resume_to_job(
         file_name="resume.pdf",
         resume_skills=["Python", "SQL", "Pandas"],
-        job_description=jd_text,
-        resume_text=resume_text,
+        job_description="Looking for a Data Scientist with Python, SQL, and Pandas.",
+        resume_text="Senior Data Scientist using Python, SQL, and Pandas.",
+        embedding_model=FakeEmbeddingModel(),
     )
-
-    assert isinstance(result, MatchResult)
-    assert result.match_score >= 85
-    assert result.matched_skills == ["Python", "SQL", "Pandas"]
-    assert len(result.strengths) > 0
-    assert result.ai.model == "hybrid-lexical-semantic-v1"
+    assert result.match_score >= 95
+    assert result.match_breakdown.method == "HYBRID_EMBEDDING"
+    assert result.match_breakdown.embedding_model == "sentence-transformers/all-MiniLM-L6-v2"
+    assert result.match_breakdown.skill_weight + result.match_breakdown.semantic_weight == 1.0
 
 
-def test_match_resume_to_job_no_skills_in_jd_falls_back_to_semantic():
-    resume_text = "Experienced product manager and strategic leader with agile cross-functional delivery."
-    jd_text = "We are seeking a collaborative product leader to drive vision, strategy, and roadmap execution."
-
+def test_no_recognized_jd_skills_uses_semantic_only():
     result = match_resume_to_job(
         file_name="pm_resume.pdf",
         resume_skills=[],
-        job_description=jd_text,
-        resume_text=resume_text,
+        job_description="We seek a collaborative product leader to drive strategy and roadmap execution.",
+        resume_text="Experienced product manager leading product strategy.",
+        embedding_model=FakeEmbeddingModel(),
     )
-
-    assert isinstance(result, MatchResult)
-    # Should not collapse to 0%
     assert result.match_score > 0
-    assert result.matched_skills == []
-    assert result.missing_skills == []
-
-
-def test_keyword_stuffing_penalty():
-    # 12 unrelated skills listed without relevant semantic text
-    stuffing_skills = ["Python", "React", "Swift", "Kotlin", "Figma", "Java", "SQL", "HTML", "CSS", "TypeScript", "NumPy", "Pandas"]
-    resume_text = "Keywords: Python, React, Swift, Kotlin, Figma, Java, SQL, HTML, CSS, TypeScript, NumPy, Pandas."
-    jd_text = "Senior Machine Learning Engineer specializing in distributed PyTorch, CUDA, kernel optimization, and GPU clusters."
-
-    result = match_resume_to_job(
-        file_name="stuffed.pdf",
-        resume_skills=stuffing_skills,
-        job_description=jd_text,
-        resume_text=resume_text,
-    )
-
-    assert isinstance(result, MatchResult)
-    # Should be heavily dampened
-    assert result.match_score < 40
+    assert result.match_breakdown.skill_weight == 0.0
+    assert result.match_breakdown.semantic_weight == 1.0

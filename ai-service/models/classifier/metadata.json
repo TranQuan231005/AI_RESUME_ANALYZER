@@ -1,0 +1,168 @@
+{
+  "modelType": "Logistic Regression",
+  "pipeline": "TfidfVectorizer(ngram_range=(1,2), sublinear_tf=True, min_df=2) + LogisticRegression(class_weight='balanced')",
+  "datasetVersion": "2.0.0-controlled-synthetic",
+  "pythonVersion": "3.9.6",
+  "scikitLearnVersion": "1.6.1",
+  "joblibVersion": "1.5.3",
+  "artifactSha256": "d81b8a88392248ebc0453f6b12fc5d90748b346dbc1184e16cd9445d6fec803f",
+  "trainedAt": "2026-09-07T09:55:42.240377+00:00",
+  "labels": [
+    "Android Development",
+    "Data Science",
+    "UI/UX",
+    "Web Development",
+    "iOS Development"
+  ],
+  "randomSeed": 42,
+  "sampleCounts": {
+    "train": 175,
+    "validation": 25,
+    "oodValidation": 50,
+    "totalTrained": 175
+  },
+  "cvResults": {
+    "Multinomial Naive Bayes": {
+      "model_name": "Multinomial Naive Bayes",
+      "cv_accuracy_mean": 0.9829,
+      "cv_accuracy_std": 0.0343,
+      "cv_macro_f1_mean": 0.9832,
+      "cv_macro_f1_std": 0.0336,
+      "cv_weighted_f1_mean": 0.9832,
+      "fit_time_ms": 44.91
+    },
+    "Logistic Regression": {
+      "model_name": "Logistic Regression",
+      "cv_accuracy_mean": 0.9886,
+      "cv_accuracy_std": 0.0229,
+      "cv_macro_f1_mean": 0.9883,
+      "cv_macro_f1_std": 0.0233,
+      "cv_weighted_f1_mean": 0.9883,
+      "fit_time_ms": 66.08
+    },
+    "Linear SVM (Calibrated)": {
+      "model_name": "Linear SVM (Calibrated)",
+      "cv_accuracy_mean": 0.9886,
+      "cv_accuracy_std": 0.0229,
+      "cv_macro_f1_mean": 0.9883,
+      "cv_macro_f1_std": 0.0233,
+      "cv_weighted_f1_mean": 0.9883,
+      "fit_time_ms": 121.8
+    }
+  },
+  "baselineComparison": {
+    "heuristicBaseline": {
+      "model_name": "Taxonomy Keyword Heuristic",
+      "accuracy": 0.52,
+      "macro_f1": 0.581,
+      "weighted_f1": 0.581,
+      "avg_latency_ms": 0.6947
+    },
+    "modelsValidation": {
+      "Multinomial Naive Bayes": {
+        "val_accuracy": 1.0,
+        "val_macro_f1": 1.0,
+        "val_weighted_f1": 1.0
+      },
+      "Logistic Regression": {
+        "val_accuracy": 1.0,
+        "val_macro_f1": 1.0,
+        "val_weighted_f1": 1.0
+      },
+      "Linear SVM (Calibrated)": {
+        "val_accuracy": 1.0,
+        "val_macro_f1": 1.0,
+        "val_weighted_f1": 1.0
+      }
+    }
+  },
+  "textFeatureConfig": {
+    "lowercase": true,
+    "stopWords": "english",
+    "ngramRange": [
+      1,
+      2
+    ],
+    "sublinearTf": true,
+    "minDf": 2,
+    "vocabSize": 1467
+  },
+  "unknownThreshold": 0.3,
+  "unknownCalibrationStats": {
+    "0.20": {
+      "sixLabelMacroF1": 0.5953,
+      "oodFalseAcceptanceRate": 1.0,
+      "knownClassRejectionRate": 0.0
+    },
+    "0.25": {
+      "sixLabelMacroF1": 0.9114,
+      "oodFalseAcceptanceRate": 0.16,
+      "knownClassRejectionRate": 0.0
+    },
+    "0.30": {
+      "sixLabelMacroF1": 1.0,
+      "oodFalseAcceptanceRate": 0.0,
+      "knownClassRejectionRate": 0.0
+    },
+    "0.35": {
+      "sixLabelMacroF1": 1.0,
+      "oodFalseAcceptanceRate": 0.0,
+      "knownClassRejectionRate": 0.0
+    },
+    "0.40": {
+      "sixLabelMacroF1": 1.0,
+      "oodFalseAcceptanceRate": 0.0,
+      "knownClassRejectionRate": 0.0
+    },
+    "0.45": {
+      "sixLabelMacroF1": 1.0,
+      "oodFalseAcceptanceRate": 0.0,
+      "knownClassRejectionRate": 0.0
+    },
+    "0.50": {
+      "sixLabelMacroF1": 0.7832,
+      "oodFalseAcceptanceRate": 0.0,
+      "knownClassRejectionRate": 0.36
+    },
+    "0.55": {
+      "sixLabelMacroF1": 0.6197,
+      "oodFalseAcceptanceRate": 0.0,
+      "knownClassRejectionRate": 0.52
+    },
+    "0.60": {
+      "sixLabelMacroF1": 0.4008,
+      "oodFalseAcceptanceRate": 0.0,
+      "knownClassRejectionRate": 0.8
+    },
+    "0.65": {
+      "sixLabelMacroF1": 0.19,
+      "oodFalseAcceptanceRate": 0.0,
+      "knownClassRejectionRate": 0.96
+    },
+    "0.70": {
+      "sixLabelMacroF1": 0.1333,
+      "oodFalseAcceptanceRate": 0.0,
+      "knownClassRejectionRate": 1.0
+    },
+    "0.75": {
+      "sixLabelMacroF1": 0.1333,
+      "oodFalseAcceptanceRate": 0.0,
+      "knownClassRejectionRate": 1.0
+    },
+    "0.80": {
+      "sixLabelMacroF1": 0.1333,
+      "oodFalseAcceptanceRate": 0.0,
+      "knownClassRejectionRate": 1.0
+    },
+    "0.85": {
+      "sixLabelMacroF1": 0.1333,
+      "oodFalseAcceptanceRate": 0.0,
+      "knownClassRejectionRate": 1.0
+    },
+    "0.90": {
+      "sixLabelMacroF1": 0.1333,
+      "oodFalseAcceptanceRate": 0.0,
+      "knownClassRejectionRate": 1.0
+    }
+  }
+}

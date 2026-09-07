@@ -1,5 +1,6 @@
 """Unit tests for ML model loading, caching, and fallback behavior."""
 import json
+import hashlib
 from pathlib import Path
 import pytest
 
@@ -44,6 +45,11 @@ def test_get_model_metadata_structure():
     assert "unknownThreshold" in metadata
     assert isinstance(metadata["labels"], list)
     assert len(metadata["labels"]) == 5
+    assert metadata["pythonVersion"]
+    assert metadata["scikitLearnVersion"]
+    assert metadata["joblibVersion"]
+    model_path, _ = get_artifact_paths()
+    assert metadata["artifactSha256"] == hashlib.sha256(model_path.read_bytes()).hexdigest()
     assert set(metadata["labels"]) == {
         "Data Science",
         "Web Development",

@@ -106,6 +106,14 @@ def test_validate_and_sanitize_match_insights_deduplication():
         strengths=["Good React"],
         weaknesses=["Missing GraphQL"],
         recommendations=["Learn GraphQL"],
+        matchBreakdown={
+            "method": "SKILL_ONLY",
+            "skillScore": 80,
+            "semanticScore": None,
+            "skillWeight": 1.0,
+            "semanticWeight": 0.0,
+            "embeddingModel": None,
+        },
         ai=AiMetadata(provider=AiProvider.RULE_BASED, model="deterministic-v1", usedFallback=True, processing_ms=0),
     )
 

@@ -48,6 +48,10 @@ def test_health_check_offline(client, monkeypatch):
     data = response.json()
     assert data["status"] == "healthy"
     assert data["ollamaReachable"] is False
+    assert isinstance(data["classifierLoaded"], bool)
+    assert "classifierModel" in data
+    assert isinstance(data["embeddingModelLoaded"], bool)
+    assert "embeddingModel" in data
 
 
 def test_health_check_online(client, monkeypatch):

@@ -8,7 +8,8 @@
     {
       "field": "Data Science",
       "matchedSkills": ["Python", "Pandas"],
-      "confidence": 0.8
+      "confidence": 0.8,
+      "topTerms": ["machine learning", "pandas", "python"]
     }
   ],
   "resumeScore": 71,

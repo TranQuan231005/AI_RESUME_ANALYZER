@@ -5,6 +5,7 @@ node_modules/
 build/
 dist/
 .gradle/
+.parcel-cache/
 
 # Python / Pytest / Recommend Engine
 __pycache__/
@@ -13,6 +14,8 @@ __pycache__/
 **/.pytest_cache/
 *.py[cod]
 *$py.class
+.coverage
+**/.coverage
 .venv/
 venv/
 env/
@@ -21,6 +24,12 @@ env/
 .env
 .env.local
 .env.*.local
+scripts/config.yml
+
+# Local agent/plugin tooling (not part of the product source)
+/.agents/
+/plugins/
+/skills-lock.json
 
 # System & IDE Files
 .DS_Store

@@ -75,7 +75,10 @@ class MLClassificationEngine:
                 raw_features = extract_features(text)
             fallback_res = fallback_classify_features(raw_features)
             
-            evidence = fallback_res.field_evidence or []
+            evidence = [
+                {**item, "topTerms": list(item.get("topTerms", []))}
+                for item in (fallback_res.field_evidence or [])
+            ]
             conf = 0.0
             for ev in evidence:
                 if ev.get("field") == fallback_res.predicted_field:

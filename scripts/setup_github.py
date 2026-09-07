@@ -4,7 +4,6 @@ import re
 import os
 import time
 
-import yaml
 import sys
 
 # Đảm bảo in tiếng Việt không bị lỗi trên Windows
@@ -14,26 +13,17 @@ if sys.platform == "win32":
 # ==========================================
 # CONFIGURATION
 # ==========================================
-# THAY THẾ CÁC GIÁ TRỊ NÀY BẰNG THÔNG TIN CỦA BẠN
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 REPO_OWNER = os.getenv("REPO_OWNER", "TranQuan231005")
 REPO_NAME = os.getenv("REPO_NAME", "AI_RESUME_ANALYZER")
 
-# Đọc token từ file config.yml (nếu có)
-if not GITHUB_TOKEN:
-    config_path = os.path.join(os.path.dirname(__file__), "config.yml")
-    if os.path.exists(config_path):
-        with open(config_path, "r", encoding="utf-8") as f:
-            config_data = yaml.safe_load(f)
-            if config_data and "github_token" in config_data:
-                GITHUB_TOKEN = config_data["github_token"]
-
 if not GITHUB_TOKEN or GITHUB_TOKEN == "YOUR_GITHUB_TOKEN_HERE":
-    print("❌ Lỗi: Không tìm thấy GITHUB_TOKEN hợp lệ trong biến môi trường hoặc scripts/config.yml!")
+    print("❌ Lỗi: Không tìm thấy GITHUB_TOKEN hợp lệ trong biến môi trường!")
     sys.exit(1)
 
 
-MARKDOWN_FILE = "../KE_HOACH_LAM_LAI_DU_AN_3_TUAN.md"
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+MARKDOWN_FILE = os.path.join(ROOT_DIR, "docs", "project", "KE_HOACH_LAM_LAI_DU_AN_3_TUAN.md")
 
 headers = {
     "Authorization": f"token {GITHUB_TOKEN}",
@@ -106,13 +96,10 @@ def create_milestones():
 # ==========================================
 def parse_and_create_issues():
     print("-> Parsing Markdown and creating issues...")
-    # Check if the file is run from scripts/ or from root
     md_path = MARKDOWN_FILE
     if not os.path.exists(md_path):
-        md_path = "KE_HOACH_LAM_LAI_DU_AN_3_TUAN.md"
-        if not os.path.exists(md_path):
-            print(f"   ❌ File not found!")
-            return
+        print(f"   ❌ File not found: {md_path}")
+        return
 
     with open(md_path, "r", encoding="utf-8") as f:
         content = f.read()

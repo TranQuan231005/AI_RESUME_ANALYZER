@@ -366,10 +366,104 @@
             "type": "boolean",
             "title": "Ollamareachable",
             "default": false
+          },
+          "classifierLoaded": {
+            "type": "boolean",
+            "title": "Classifierloaded",
+            "default": false
+          },
+          "classifierModel": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Classifiermodel"
+          },
+          "embeddingModelLoaded": {
+            "type": "boolean",
+            "title": "Embeddingmodelloaded",
+            "default": false
+          },
+          "embeddingModel": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Embeddingmodel"
           }
         },
         "type": "object",
         "title": "HealthResponse"
+      },
+      "MatchBreakdown": {
+        "properties": {
+          "method": {
+            "type": "string",
+            "enum": [
+              "HYBRID_EMBEDDING",
+              "SKILL_ONLY"
+            ],
+            "title": "Method"
+          },
+          "skillScore": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Skillscore"
+          },
+          "semanticScore": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Semanticscore"
+          },
+          "skillWeight": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Skillweight"
+          },
+          "semanticWeight": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Semanticweight"
+          },
+          "embeddingModel": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Embeddingmodel"
+          }
+        },
+        "type": "object",
+        "required": [
+          "method",
+          "skillScore",
+          "skillWeight",
+          "semanticWeight"
+        ],
+        "title": "MatchBreakdown"
       },
       "MatchResult": {
         "properties": {
@@ -444,6 +538,9 @@
             "maxItems": 8,
             "title": "Recommendations"
           },
+          "matchBreakdown": {
+            "$ref": "#/components/schemas/MatchBreakdown"
+          },
           "ai": {
             "$ref": "#/components/schemas/AiMetadata"
           }
@@ -453,6 +550,7 @@
           "fileName",
           "targetRole",
           "matchScore",
+          "matchBreakdown",
           "ai"
         ],
         "title": "MatchResult"
@@ -688,6 +786,13 @@
             "maximum": 1.0,
             "minimum": 0.0,
             "title": "Confidence"
+          },
+          "topTerms": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Topterms"
           }
         },
         "type": "object",

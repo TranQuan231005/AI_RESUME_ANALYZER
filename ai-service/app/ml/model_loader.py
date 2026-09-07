@@ -2,12 +2,18 @@
 from __future__ import annotations
 import json
 import logging
+import os
 from pathlib import Path
 from typing import Any, Tuple
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_ARTIFACT_DIR = Path(__file__).resolve().parent.parent.parent.parent / "artifacts" / "classifier"
+LOCAL_ARTIFACT_DIR = Path(__file__).resolve().parents[2] / "models" / "classifier"
+
+
+def default_artifact_dir() -> Path:
+    """Resolve the packaged classifier without depending on the current directory."""
+    return Path(os.getenv("CLASSIFIER_ARTIFACT_DIR", str(LOCAL_ARTIFACT_DIR)))
 
 _CACHED_PIPELINE: Any = None
 _CACHED_METADATA: dict[str, Any] | None = None
@@ -15,7 +21,7 @@ _CACHED_DIR: Path | None = None
 
 
 def get_artifact_paths(artifact_dir: Path | str | None = None) -> Tuple[Path, Path]:
-    base_dir = Path(artifact_dir) if artifact_dir else DEFAULT_ARTIFACT_DIR
+    base_dir = Path(artifact_dir) if artifact_dir else default_artifact_dir()
     model_path = base_dir / "classifier_pipeline.joblib"
     metadata_path = base_dir / "metadata.json"
     return model_path, metadata_path
@@ -28,7 +34,7 @@ def is_model_available(artifact_dir: Path | str | None = None) -> bool:
 
 def get_model_metadata(artifact_dir: Path | str | None = None) -> dict[str, Any] | None:
     global _CACHED_METADATA, _CACHED_DIR
-    target_dir = Path(artifact_dir) if artifact_dir else DEFAULT_ARTIFACT_DIR
+    target_dir = Path(artifact_dir) if artifact_dir else default_artifact_dir()
     if _CACHED_METADATA is not None and _CACHED_DIR == target_dir:
         return _CACHED_METADATA
 
@@ -52,7 +58,7 @@ def get_model_metadata(artifact_dir: Path | str | None = None) -> dict[str, Any]
 
 def load_classifier_model(artifact_dir: Path | str | None = None, force_reload: bool = False) -> Any:
     global _CACHED_PIPELINE, _CACHED_METADATA, _CACHED_DIR
-    target_dir = Path(artifact_dir) if artifact_dir else DEFAULT_ARTIFACT_DIR
+    target_dir = Path(artifact_dir) if artifact_dir else default_artifact_dir()
 
     if not force_reload and _CACHED_PIPELINE is not None and _CACHED_DIR == target_dir:
         return _CACHED_PIPELINE

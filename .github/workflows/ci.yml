@@ -29,9 +29,24 @@ jobs:
           pip install -r ai-service/requirements.txt
 
       - name: Verify OpenAPI Specification Up-To-Date
+        run: python scripts/export_openapi.py --check
+
+      - name: Validate evaluation datasets and packaged classifier
         run: |
-          python -c "import sys, pathlib, json; sys.path.insert(0, 'ai-service'); from app.main import app; path = pathlib.Path('contracts/openapi/ai-service.json'); path.write_text(json.dumps(app.openapi(), indent=2))"
-          python scripts/export_openapi.py --check
+          python evaluation/scripts/validate_classification_dataset.py
+          python evaluation/scripts/validate_matching_dataset.py
+          python -c "import joblib; joblib.load('ai-service/models/classifier/classifier_pipeline.joblib')"
+
+      - name: Run schema-only LLM evaluation
+        run: python evaluation/scripts/evaluate_llm.py --mode schema-only
+
+      - name: Reproducibility smoke tests use temporary reports
+        run: |
+          python evaluation/scripts/evaluate_classifier.py --output /tmp/classification-report.md
+          python evaluation/scripts/evaluate_matching.py --output /tmp/matching-report.md --allow-pending
+
+      - name: Scan tracked source for secrets PII and broken links
+        run: python scripts/scan_repository.py
 
       - name: Run Pytest (Contracts & AI Service)
         run: |
@@ -81,3 +96,35 @@ jobs:
       - name: Build frontend
         working-directory: frontend
         run: npm run build
+
+  docker-runtime:
+    name: Docker Model & API Smoke Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate Compose configuration
+        run: docker compose config --quiet
+
+      - name: Build and start AI service
+        run: docker compose up --build --detach ai-service
+
+      - name: Verify packaged models and API flows
+        run: |
+          for attempt in $(seq 1 30); do
+            curl --fail --silent http://localhost:8000/health > /tmp/health.json && break
+            sleep 5
+          done
+          python -c "import json; value=json.load(open('/tmp/health.json')); assert value['classifierLoaded'] is True; assert value['embeddingModelLoaded'] is True"
+          curl --fail --silent --form file=@sample_files/resumes/01_data_science_senior.pdf http://localhost:8000/api/analyze-resume > /tmp/resume-result.json
+          curl --fail --silent --form file=@sample_files/resumes/01_data_science_senior.pdf --form 'jobDescription=Senior data scientist role requiring Python, SQL, Pandas, scikit-learn, model deployment, and stakeholder communication.' http://localhost:8000/api/analyze-match > /tmp/match-result.json
+          python -c "import json; r=json.load(open('/tmp/resume-result.json')); m=json.load(open('/tmp/match-result.json')); assert 'topTerms' in r['fieldEvidence'][0]; assert m['matchBreakdown']['method']=='HYBRID_EMBEDDING'"
+
+      - name: Print AI service logs on failure
+        if: failure()
+        run: docker compose logs ai-service
+
+      - name: Stop containers
+        if: always()
+        run: docker compose down --volumes

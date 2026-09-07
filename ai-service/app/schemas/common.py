@@ -71,3 +71,7 @@ class HealthResponse(SchemaBase):
         serialization_alias="ollamaReachable",
         alias="ollamaReachable",
     )
+    classifier_loaded: bool = Field(default=False, alias="classifierLoaded", serialization_alias="classifierLoaded")
+    classifier_model: Optional[str] = Field(default=None, alias="classifierModel", serialization_alias="classifierModel")
+    embedding_model_loaded: bool = Field(default=False, alias="embeddingModelLoaded", serialization_alias="embeddingModelLoaded")
+    embedding_model: Optional[str] = Field(default=None, alias="embeddingModel", serialization_alias="embeddingModel")
