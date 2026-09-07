@@ -10,9 +10,9 @@
 
 | Model Approach | MAE (Lower is better) | Spearman Rank Correlation $\rho$ (Higher is better) | Latency (ms) |
 |---|---|---|---|
-| **Keyword Skill Coverage (Baseline)** | 34.04 | 0.4634 | 0.19 ms |
-| **TF-IDF Cosine (Baseline)** | 49.05 | 0.6051 | 0.19 ms |
-| **Hybrid Lexical-Semantic (Calibrated)** | **27.40** | **0.5713** | **1.25 ms** |
+| **Keyword Skill Coverage (Baseline)** | 34.04 | 0.4634 | 0.29 ms |
+| **TF-IDF Cosine (Baseline)** | 49.05 | 0.6051 | 0.29 ms |
+| **Hybrid Lexical-Semantic (Calibrated)** | **27.40** | **0.5713** | **1.87 ms** |
 
 ## 3. Per-Scenario Error Analysis (MAE by Scenario Type)
 

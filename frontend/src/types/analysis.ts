@@ -10,6 +10,7 @@ export interface FieldEvidence {
   field: PredictedField;
   matchedSkills: string[];
   confidence: number;
+  topTerms?: string[];
 }
 
 export interface ScoreBreakdown {

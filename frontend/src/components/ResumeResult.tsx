@@ -61,11 +61,16 @@ export const ResumeResult: React.FC<ResumeResultProps> = ({
         <section className={styles.contentSection} data-testid="evidence-section">
           <h3><MagnifyingGlass size={19} weight="bold" aria-hidden="true" />Evidence</h3>
           <ul className={styles.tags}>
-            {fieldEvidence.map((item, index) => (
-              <li className={styles.tag} key={`${item.field}-${index}`}>
-                {item.field}: {item.matchedSkills.join(', ')} ({Math.round(item.confidence * 100)}%)
-              </li>
-            ))}
+            {fieldEvidence.map((item, index) => {
+              const evidenceDetail = (item.matchedSkills && item.matchedSkills.length > 0)
+                ? item.matchedSkills.join(', ')
+                : (item.topTerms && item.topTerms.length > 0 ? item.topTerms.join(', ') : 'Direct match');
+              return (
+                <li className={styles.tag} key={`${item.field}-${index}`}>
+                  {item.field}: {evidenceDetail} ({Math.round(item.confidence * 100)}%)
+                </li>
+              );
+            })}
           </ul>
         </section>
         )}

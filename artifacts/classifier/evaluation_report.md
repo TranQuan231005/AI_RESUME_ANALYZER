@@ -16,7 +16,7 @@
 | **Accuracy** | 78.00% | **100.00%** | +22.00% |
 | **Macro F1** | 0.8611 | **1.0000** | +0.1389 |
 | **Weighted F1** | 0.8611 | **1.0000** | +0.1389 |
-| **Avg Latency** | 0.23 ms | 0.60 ms | - |
+| **Avg Latency** | 0.26 ms | 0.65 ms | - |
 
 ## 3. Per-Class Performance on Test Set
 
@@ -41,10 +41,10 @@
 | **iOS Development** | 0 | 0 | 0 | 0 | 10 |
 
 ## 5. Inference Latency Benchmark
-- **Mean Latency:** 0.60 ms per resume
-- **p50 Latency:** 0.56 ms
-- **p95 Latency:** 1.03 ms
-- **p99 Latency:** 1.21 ms
+- **Mean Latency:** 0.65 ms per resume
+- **p50 Latency:** 0.60 ms
+- **p95 Latency:** 1.01 ms
+- **p99 Latency:** 1.23 ms
 
 ## 6. Model Hyperparameters & Configuration
 ```json
