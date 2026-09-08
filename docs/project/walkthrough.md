@@ -1,12 +1,12 @@
-# Walkthrough — TV5: AI Orchestration, Hybrid Fallback & Evaluation Runner
+# Historical walkthrough — TV5 orchestration work
 
-Completed all requirements for **Member 5 (TV5)** covering **AI Pipeline Orchestration (Task T5.3)**, **Evaluation Benchmark Runner (Task T5.6)**, and **Contract & CI Hardening (Task T5.5)**.
+This is a historical implementation note. Current merge-readiness requirements and verification status are maintained in [`../../walkthrough.md`](../../walkthrough.md) and [`AI_UPGRADE_PROGRESS.md`](AI_UPGRADE_PROGRESS.md). Historical test totals below are not evidence for the current commit.
 
 ---
 
 ## 1. Implemented Components
 
-### A. AI Service Core Orchestration ([`ai-service/app/main.py`](file:///d:/AI_RESUME_ANALYZER/ai-service/app/main.py))
+### A. AI Service Core Orchestration ([`ai-service/app/main.py`](../../ai-service/app/main.py))
 - **`GET /health`**: Healthcheck endpoint returning `status="healthy"`, `model="qwen3:4b"`, and `ollamaReachable: bool`.
 - **`POST /api/analyze-resume`**:
   1. Validates PDF size ($\le$ 5MB) and type.
@@ -24,10 +24,10 @@ Completed all requirements for **Member 5 (TV5)** covering **AI Pipeline Orchest
   4. Gracefully falls back to deterministic rule matching results on LLM failure.
   5. Returns validated `MatchResult`.
 
-### B. Schema Base Enhancement ([`ai-service/app/schemas/common.py`](file:///d:/AI_RESUME_ANALYZER/ai-service/app/schemas/common.py))
+### B. Schema Base Enhancement ([`ai-service/app/schemas/common.py`](../../ai-service/app/schemas/common.py))
 - Enhanced `SchemaBase.__getattr__` to support camelCase serialization aliases directly in Python attribute access (e.g., `parsed_doc.fileName`, `features.candidateName`).
 
-### C. Test Suite for AI Orchestration ([`ai-service/tests/test_orchestration.py`](file:///d:/AI_RESUME_ANALYZER/ai-service/tests/test_orchestration.py))
+### C. Test Suite for AI Orchestration ([`ai-service/tests/test_orchestration.py`](../../ai-service/tests/test_orchestration.py))
 - `test_health_check_offline` & `test_health_check_online`
 - `test_analyze_resume_with_llm_success`
 - `test_analyze_resume_fallback_on_ollama_error`
@@ -35,9 +35,9 @@ Completed all requirements for **Member 5 (TV5)** covering **AI Pipeline Orchest
 - `test_analyze_match_fallback_on_llm_error`
 - `test_analyze_match_short_jd_validation_error`
 
-### D. Automated Evaluation Runner ([`evaluation/run_evaluation.py`](file:///d:/AI_RESUME_ANALYZER/evaluation/run_evaluation.py))
-- Benchmarks skill matching accuracy and latency across frozen ground truth datasets (`job-descriptions.json` and `matching-ground-truth.json`).
-- Automatically generates formatted markdown reports in [`evaluation/reports/evaluation-summary.md`](file:///d:/AI_RESUME_ANALYZER/evaluation/reports/evaluation-summary.md).
+### D. Evaluation scripts
+- Current dataset validators and evaluators live in [`evaluation/scripts/`](../../evaluation/scripts/).
+- Current reports live in [`evaluation/reports/`](../../evaluation/reports/).
 
 ---
 

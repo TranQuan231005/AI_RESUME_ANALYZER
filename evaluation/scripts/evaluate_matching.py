@@ -26,6 +26,42 @@ def load_pairs(path: Path) -> list[dict[str, Any]]:
     return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
 
 
+def review_validation_errors(pairs: list[dict[str, Any]]) -> list[str]:
+    """Return review-gate failures without calculating any human-quality metric."""
+    errors: list[str] = []
+    for pair in pairs:
+        pair_id = str(pair.get("id", "unknown-pair"))
+        if pair.get("reviewed") is not True:
+            errors.append(f"{pair_id}: two-reviewer approval is required")
+            continue
+
+        scores = pair.get("reviewerScores")
+        if not isinstance(scores, list) or len(scores) != 2:
+            errors.append(f"{pair_id}: exactly two reviewer scores are required")
+            continue
+
+        reviewer_ids = [item.get("reviewerId") for item in scores if isinstance(item, dict)]
+        values = [item.get("score") for item in scores if isinstance(item, dict)]
+        if (
+            len(reviewer_ids) != 2
+            or any(not isinstance(reviewer_id, str) or not reviewer_id.strip() for reviewer_id in reviewer_ids)
+            or len(set(reviewer_ids)) != 2
+        ):
+            errors.append(f"{pair_id}: two distinct reviewer IDs are required")
+            continue
+        if any(type(value) is not int or not 0 <= value <= 100 for value in values):
+            errors.append(f"{pair_id}: reviewer scores must be integers from 0 to 100")
+            continue
+
+        adjudicated = pair.get("adjudicatedScore")
+        if adjudicated is not None and (type(adjudicated) is not int or not 0 <= adjudicated <= 100):
+            errors.append(f"{pair_id}: adjudicated score must be an integer from 0 to 100")
+            continue
+        if abs(values[0] - values[1]) > 15 and adjudicated is None:
+            errors.append(f"{pair_id}: disagreement above 15 requires an adjudicated score")
+    return errors
+
+
 def human_score(pair: dict[str, Any]) -> float:
     adjudicated = pair.get("adjudicatedScore")
     if adjudicated is not None:
@@ -145,9 +181,14 @@ def main() -> None:
     output = Path(args.output)
     if not output.is_absolute():
         output = ROOT_DIR / output
-    reviewed = [pair for pair in pairs if pair.get("reviewed")]
-    if len(reviewed) != len(pairs):
-        write_report(output, None, f"Only {len(reviewed)}/{len(pairs)} pairs have two-reviewer approval; no quality metrics were calculated.")
+    review_errors = review_validation_errors(pairs)
+    if review_errors:
+        approved_count = sum(not review_validation_errors([pair]) for pair in pairs)
+        reason = (
+            f"Only {approved_count}/{len(pairs)} pairs have valid two-reviewer approval; "
+            f"no quality metrics were calculated. First issue: {review_errors[0]}"
+        )
+        write_report(output, None, reason)
         if not args.allow_pending:
             raise SystemExit(2)
         return
@@ -157,8 +198,8 @@ def main() -> None:
         if not args.allow_pending:
             raise SystemExit(2)
         return
-    calibration = [pair for pair in reviewed if pair["split"] == "calibration"]
-    test_pairs = [pair for pair in reviewed if pair["split"] == "test"]
+    calibration = [pair for pair in pairs if pair["split"] == "calibration"]
+    test_pairs = [pair for pair in pairs if pair["split"] == "test"]
     with tempfile.TemporaryDirectory(prefix="matching-evaluation-") as temp:
         temp_dir = Path(temp)
         alpha = select_alpha(calibration, model, temp_dir)

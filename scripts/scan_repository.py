@@ -26,6 +26,20 @@ def tracked_files() -> list[Path]:
     return [ROOT / name for name in names if (ROOT / name).is_file()]
 
 
+def markdown_link_error(path: Path, raw_target: str) -> str | None:
+    """Return a concise hygiene error for a Markdown link, if any."""
+    target = raw_target.split("#", 1)[0]
+    if not target or target.startswith("mailto:"):
+        return None
+    if target.casefold().startswith("file:"):
+        return "local file URL"
+    if "://" in target:
+        return None
+    if not (path.parent / target).resolve().exists():
+        return f"missing relative target: {target}"
+    return None
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--check-history", action="store_true")
@@ -44,11 +58,11 @@ def main() -> None:
         if path.suffix.lower() == ".md":
             text = data.decode("utf-8", errors="ignore")
             for raw_target in LINK.findall(text):
-                target = raw_target.split("#", 1)[0]
-                if not target or "://" in target or target.startswith("mailto:"):
-                    continue
-                if not (path.parent / target).resolve().exists():
-                    errors.append(f"broken link in {path.relative_to(ROOT)}: {target}")
+                link_error = markdown_link_error(path, raw_target)
+                if link_error:
+                    errors.append(
+                        f"invalid link in {path.relative_to(ROOT)}: {raw_target} ({link_error})"
+                    )
     if args.check_history:
         affected = subprocess.check_output(
             ["git", "log", "--all", "--format=%h", "--", "scripts/config.yml"],

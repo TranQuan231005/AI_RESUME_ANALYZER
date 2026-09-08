@@ -314,7 +314,7 @@ GitHub Actions chạy type-check/test/build frontend, Gradle tests, pytest và k
 
 ## Dữ liệu demo
 
-Thư mục [`sample_files/resumes/`](sample_files/resumes/) chứa CV synthetic theo nhóm chuyên môn và các trường hợp biên. [`sample_files/job_descriptions/`](sample_files/job_descriptions/) chứa JD demo; [`sample_files/manual/`](sample_files/manual/) không được dùng cho training/evaluation.
+Thư mục [`sample_files/resumes/`](sample_files/resumes/) chứa CV synthetic theo nhóm chuyên môn và các trường hợp biên. [`sample_files/job_descriptions/`](sample_files/job_descriptions/) chứa JD demo; [`sample_files/manual/`](sample_files/manual/) chỉ chứa text-PDF synthetic với địa chỉ `example.test`, dùng cho demo upload và không được dùng cho training/evaluation.
 
 250 CV in-domain và 100 OOD đều là synthetic controlled benchmark, không chứng minh hiệu quả trên CV thực tế. Matching có 70 cặp nhưng quality report giữ trạng thái `PENDING HUMAN REVIEW` cho đến khi đủ hai reviewer độc lập. LLM schema-only cũng không được diễn giải là chất lượng Qwen. Xem [`evaluation/reports/`](evaluation/reports/).
 

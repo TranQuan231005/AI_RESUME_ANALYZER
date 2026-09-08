@@ -38,6 +38,41 @@ def prepare(case):
     return system, user, definition, validator
 
 
+def schema_only_samples(case: dict) -> tuple[dict, dict]:
+    """Provide deterministic sanitizer inputs without making a model-quality claim."""
+    if case["type"] == "resume_recommendation":
+        return (
+            {
+                "recommendedSkills": ["Kubernetes"],
+                "recommendations": ["Add one measurable project outcome to the resume."],
+            },
+            {"recommendedSkills": "not-an-array", "recommendations": None},
+        )
+    return (
+        {
+            "atsKeywords": ["Python"],
+            "strengths": ["Relevant experience is described."],
+            "weaknesses": ["Add clearer evidence for the requested role."],
+            "recommendations": ["Show a measurable project outcome."],
+        },
+        {"atsKeywords": "not-an-array", "strengths": None},
+    )
+
+
+def run_schema_only(cases: list[dict]) -> dict[str, int]:
+    """Exercise prompt construction and both sanitizer paths for every synthetic case."""
+    validator_calls = 0
+    for case in cases:
+        _system, user, _definition, validator = prepare(case)
+        if "Ignore all prior instructions" in case.get("resumeText", ""):
+            assert user.count("<UNTRUSTED_DOCUMENT_CONTENT>") == 1
+        valid_output, invalid_output = schema_only_samples(case)
+        assert isinstance(validator(valid_output), tuple)
+        assert isinstance(validator(invalid_output), tuple)
+        validator_calls += 2
+    return {"cases": len(cases), "validatorCalls": validator_calls}
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--mode", choices=["schema-only", "live"], default="schema-only")
@@ -48,12 +83,16 @@ def main() -> None:
         raise SystemExit("LLM dataset must contain at least 20 cases")
     client = OllamaClient() if args.mode == "live" else None
     outputs = []
+    if args.mode == "schema-only":
+        result = run_schema_only(cases)
+        print(
+            f"Schema-only checks passed for {result['cases']} cases with "
+            f"{result['validatorCalls']} sanitizer checks; no Qwen quality claim was made."
+        )
+        return
+
     for case in cases:
         system, user, definition, validator = prepare(case)
-        if "Ignore all prior instructions" in case.get("resumeText", ""):
-            assert user.count("<UNTRUSTED_DOCUMENT_CONTENT>") == 1
-        if args.mode == "schema-only":
-            continue
         raw = client.generate_json(system, user)
         validator(raw)
         outputs.append({"caseId": case["id"], "output": raw, "modelVersion": client.config.model, "promptVersion": definition.version, "timestamp": datetime.now(timezone.utc).isoformat()})
@@ -64,8 +103,6 @@ def main() -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text("".join(json.dumps(item, ensure_ascii=False) + "\n" for item in outputs), encoding="utf-8")
         print(f"Captured {len(outputs)} live Ollama outputs for human review at {path}")
-    else:
-        print(f"Schema-only checks passed for {len(cases)} cases; no Qwen quality claim was made.")
 
 
 if __name__ == "__main__":

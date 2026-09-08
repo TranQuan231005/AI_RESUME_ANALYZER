@@ -55,7 +55,7 @@ def evaluate_heuristic(samples: List[Dict[str, Any]]) -> Dict[str, Any]:
         latencies.append((time.perf_counter() - t0) * 1000.0)
         y_pred.append(res.predicted_field)
 
-    target_classes = [c for c in FIELD_NAMES if c != "Unknown"]
+    target_classes = list(FIELD_NAMES)
     acc = accuracy_score(y_true, y_pred)
     macro_f1 = f1_score(y_true, y_pred, labels=target_classes, average="macro", zero_division=0)
     weighted_f1 = f1_score(y_true, y_pred, labels=target_classes, average="weighted", zero_division=0)
@@ -158,6 +158,7 @@ def generate_markdown_report(
         f"- **Dataset Version:** `{metadata.get('datasetVersion', '1.0.0')}`",
         f"- **Evaluation Date:** `{metadata.get('trainedAt', 'N/A')}`",
         f"- **Test Set Size:** {test_count} samples (50 in-domain + 50 held-out OOD)",
+        "- **Baseline Comparison:** Both the heuristic and ML classifier use this same six-label held-out split.",
         f"- **Classes Evaluated ({len(classes)}):** {', '.join(classes)}",
         f"- **Model Type:** `{metadata.get('modelType', 'Logistic Regression')}`",
         f"- **Random Seed:** `{metadata.get('randomSeed', 42)}`",
@@ -257,7 +258,7 @@ def main() -> None:
     logger.info("Loaded model from %s and %d test samples", model_path, len(test_samples))
 
     # Evaluate Heuristic
-    heuristic_res = evaluate_heuristic(in_domain_samples)
+    heuristic_res = evaluate_heuristic(test_samples)
     logger.info("Heuristic Baseline Test Metrics: Acc=%.4f, Macro F1=%.4f", heuristic_res["accuracy"], heuristic_res["macro_f1"])
 
     # Evaluate ML
