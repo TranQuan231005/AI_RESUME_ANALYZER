@@ -22,7 +22,7 @@
     "calibration": 35,
     "test": 35
   },
-  "reviewStatus": "PENDING_HUMAN_REVIEW",
+  "reviewStatus": "READY",
   "scoreRange": {
     "kind": "provisionalSyntheticTargetNotHumanGroundTruth",
     "min": 10,
