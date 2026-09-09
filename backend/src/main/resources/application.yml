@@ -1,0 +1,37 @@
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:h2:mem:resume_analyzer;MODE=MySQL;DATABASE_TO_LOWER=TRUE;CASE_INSENSITIVE_IDENTIFIERS=TRUE}
+    username: ${DB_USER:sa}
+    password: ${DB_PASSWORD:}
+  flyway:
+    enabled: true
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 10MB
+
+server:
+  port: ${PORT:8080}
+
+app:
+  ai-service:
+    base-url: ${AI_SERVICE_URL:http://localhost:8000}
+  security:
+    jwt:
+      secret: ${JWT_SECRET:}
+      expiration-ms: ${JWT_EXPIRATION_MS:7200000}
+  seed:
+    enabled: ${SEED_USERS_ENABLED:false}
+    user:
+      email: ${SEED_USER_EMAIL:}
+      password: ${SEED_USER_PASSWORD:}
+      full-name: ${SEED_USER_FULL_NAME:}
+    admin:
+      email: ${SEED_ADMIN_EMAIL:}
+      password: ${SEED_ADMIN_PASSWORD:}
+      full-name: ${SEED_ADMIN_FULL_NAME:}

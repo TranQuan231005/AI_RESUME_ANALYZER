@@ -29,6 +29,16 @@ class SchemaBase(BaseModel):
         use_enum_values=True,
     )
 
+    def __getattr__(self, item: str) -> Any:
+        try:
+            return super().__getattribute__(item)
+        except AttributeError:
+            fields = object.__getattribute__(self, "__class__").model_fields
+            for field_name, field_info in fields.items():
+                if field_info.alias == item or field_info.serialization_alias == item:
+                    return getattr(self, field_name)
+            raise AttributeError(f"'{type(self).__name__}' object has no attribute '{item}'")
+
 
 class AiMetadata(SchemaBase):
     provider: AiProvider
@@ -55,9 +65,13 @@ class ApiError(SchemaBase):
 
 class HealthResponse(SchemaBase):
     status: str = "healthy"
-    model: str = "qwen3:4b"
+    model: str = "qwen3:0.6b"
     ollama_reachable: bool = Field(
         default=False,
         serialization_alias="ollamaReachable",
         alias="ollamaReachable",
     )
+    classifier_loaded: bool = Field(default=False, alias="classifierLoaded", serialization_alias="classifierLoaded")
+    classifier_model: Optional[str] = Field(default=None, alias="classifierModel", serialization_alias="classifierModel")
+    embedding_model_loaded: bool = Field(default=False, alias="embeddingModelLoaded", serialization_alias="embeddingModelLoaded")
+    embedding_model: Optional[str] = Field(default=None, alias="embeddingModel", serialization_alias="embeddingModel")

@@ -1,0 +1,76 @@
+{
+  "version": "1.0.0",
+  "description": "Frozen, synthetic English job descriptions for deterministic matching evaluation.",
+  "jobDescriptions": [
+    {
+      "id": "jd-data-analyst",
+      "title": "Data Analyst",
+      "field": "Data Science",
+      "skills": ["Python", "SQL", "Pandas"],
+      "jobDescription": "Data Analyst\nBuild repeatable reports and investigate product trends using Python, SQL, and Pandas. Communicate clear findings to a cross-functional product team."
+    },
+    {
+      "id": "jd-ml-engineer",
+      "title": "Machine Learning Engineer",
+      "field": "Data Science",
+      "skills": ["Python", "NumPy", "scikit-learn", "TensorFlow", "SQL"],
+      "jobDescription": "Machine Learning Engineer\nDevelop reproducible models using Python, NumPy, scikit-learn, and TensorFlow. Use SQL to prepare structured training data and evaluate model behavior."
+    },
+    {
+      "id": "jd-frontend-engineer",
+      "title": "Frontend Engineer",
+      "field": "Web Development",
+      "skills": ["React", "TypeScript", "JavaScript", "HTML", "CSS"],
+      "jobDescription": "Frontend Engineer\nCreate accessible interfaces with React and TypeScript. Maintain reusable JavaScript components and implement semantic HTML with responsive CSS."
+    },
+    {
+      "id": "jd-full-stack-developer",
+      "title": "Full Stack Developer",
+      "field": "Web Development",
+      "skills": ["JavaScript", "TypeScript", "React", "SQL", "CSS"],
+      "jobDescription": "Full Stack Developer\nDeliver browser features using JavaScript, TypeScript, and React. Design reliable SQL queries and maintain responsive CSS across the application."
+    },
+    {
+      "id": "jd-android-engineer",
+      "title": "Android Engineer",
+      "field": "Android Development",
+      "skills": ["Java", "Kotlin", "SQL"],
+      "jobDescription": "Android Engineer\nBuild maintainable mobile features in Java and Kotlin. Integrate local application data through SQL and collaborate on reliable release testing."
+    },
+    {
+      "id": "jd-kotlin-developer",
+      "title": "Kotlin Application Developer",
+      "field": "Android Development",
+      "skills": ["Kotlin", "Java"],
+      "jobDescription": "Kotlin Application Developer\nImplement tested Android application features with Kotlin and maintain interoperability with existing Java modules in a collaborative delivery team."
+    },
+    {
+      "id": "jd-ios-engineer",
+      "title": "iOS Engineer",
+      "field": "iOS Development",
+      "skills": ["Swift", "SwiftUI"],
+      "jobDescription": "iOS Engineer\nDevelop reliable native application flows using Swift and build accessible, reusable user interfaces with SwiftUI in an iterative product environment."
+    },
+    {
+      "id": "jd-ui-ux-designer",
+      "title": "UI UX Designer",
+      "field": "UI/UX",
+      "skills": ["Figma", "Adobe XD", "CSS"],
+      "jobDescription": "UI UX Designer\nCreate interface systems and interactive prototypes with Figma and Adobe XD. Work with engineers to verify visual details implemented in CSS."
+    },
+    {
+      "id": "jd-data-scientist",
+      "title": "Data Scientist",
+      "field": "Data Science",
+      "skills": ["Python", "Pandas", "NumPy", "TensorFlow", "scikit-learn"],
+      "jobDescription": "Data Scientist\nExplore datasets with Python, Pandas, and NumPy. Train and assess predictive solutions using TensorFlow and scikit-learn with documented experiments."
+    },
+    {
+      "id": "jd-product-designer",
+      "title": "Product Designer",
+      "field": "UI/UX",
+      "skills": ["Figma", "Adobe XD", "HTML"],
+      "jobDescription": "Product Designer\nDesign and test product workflows in Figma, maintain prototype assets in Adobe XD, and understand semantic HTML when collaborating with frontend engineers."
+    }
+  ]
+}

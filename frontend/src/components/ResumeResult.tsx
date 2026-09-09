@@ -1,101 +1,100 @@
 import React from 'react';
-
-interface ScoreBreakdown {
-  contact: number;
-  summary: number;
-  skills: number;
-  education: number;
-  experience: number;
-  projects: number;
-  achievementsCertifications: number;
-  quantifiedImpact: number;
-  total: number;
-}
+import { Lightbulb, MagnifyingGlass, Sparkle } from '@phosphor-icons/react';
+import type { ResumeAnalysisResult } from '../types/analysis';
+import { Alert, Badge, LoadingSkeleton, ScoreSummary } from './ui';
+import styles from './Result.module.css';
 
 interface ResumeResultProps {
   loading: boolean;
   error: string | null;
-  isFallback?: boolean;
-  scoreBreakdown: ScoreBreakdown | null;
-  evidence: string[];
-  recommendations: string[];
-  recommendedSkills: string[];
+  result: ResumeAnalysisResult | null;
 }
 
 export const ResumeResult: React.FC<ResumeResultProps> = ({
   loading,
   error,
-  isFallback = false,
-  scoreBreakdown,
-  evidence,
-  recommendations,
-  recommendedSkills,
+  result,
 }) => {
   if (loading) {
-    return <div data-testid="loading-state">Analyzing Resume...</div>;
+    return <LoadingSkeleton label="Analyzing Resume..." testId="loading-state" />;
   }
 
   if (error) {
-    return <div data-testid="error-state">Error: {error}</div>;
+    return <Alert tone="error" testId="error-state">Error: {error}</Alert>;
   }
 
-  if (!scoreBreakdown) {
+  if (!result) {
     return null;
   }
 
+  const { ai, fieldEvidence, recommendations, recommendedSkills, scoreBreakdown } = result;
+
   return (
-    <div data-testid="resume-result">
-      {isFallback && (
-        <span data-testid="fallback-badge" className="badge-warning">
-          Fallback Mode
-        </span>
+    <article className={styles.result} data-testid="resume-result">
+      {ai.usedFallback && (
+        <Alert tone="warning">
+          <div className={styles.fallback}><strong data-testid="fallback-badge">Fallback Mode</strong><p>The local rule-based engine produced this result because the AI provider was unavailable.</p></div>
+        </Alert>
       )}
 
-      <h2>Overall Score: {scoreBreakdown.total}/100</h2>
+      <header className={styles.documentHeader}>
+        <div><h2>{result.fileName}</h2><p>{result.candidateName ?? 'Candidate name unavailable'}</p></div>
+        <div className={styles.meta}><Badge tone="accent">{result.predictedField}</Badge><p>Predicted field</p></div>
+      </header>
 
-      <div data-testid="score-breakdown">
-        <div>Contact: {scoreBreakdown.contact}/5</div>
-        <div>Summary: {scoreBreakdown.summary}/10</div>
-        <div>Skills: {scoreBreakdown.skills}/15</div>
-        <div>Education: {scoreBreakdown.education}/10</div>
-        <div>Experience: {scoreBreakdown.experience}/20</div>
-        <div>Projects: {scoreBreakdown.projects}/15</div>
-        <div>Achievements: {scoreBreakdown.achievementsCertifications}/10</div>
-        <div>Impact: {scoreBreakdown.quantifiedImpact}/15</div>
-      </div>
+      <ScoreSummary score={result.resumeScore} label="Overall Score" hint="A structured score across eight resume quality signals." />
 
-      {evidence.length > 0 && (
-        <div data-testid="evidence-section">
-          <h3>Evidence</h3>
-          <ul>
-            {evidence.map((item, idx) => (
-              <li key={idx}>{item}</li>
-            ))}
+      <section className={styles.breakdown} data-testid="score-breakdown" aria-labelledby="score-breakdown-heading">
+        <h3 className={styles.sectionTitle} id="score-breakdown-heading">Score breakdown</h3>
+        <div className={styles.metric}><span>Contact: </span><strong>{scoreBreakdown.contact}/5</strong></div>
+        <div className={styles.metric}><span>Summary: </span><strong>{scoreBreakdown.summary}/10</strong></div>
+        <div className={styles.metric}><span>Skills: </span><strong>{scoreBreakdown.skills}/15</strong></div>
+        <div className={styles.metric}><span>Education: </span><strong>{scoreBreakdown.education}/10</strong></div>
+        <div className={styles.metric}><span>Experience: </span><strong>{scoreBreakdown.experience}/20</strong></div>
+        <div className={styles.metric}><span>Projects: </span><strong>{scoreBreakdown.projects}/15</strong></div>
+        <div className={styles.metric}><span>Achievements: </span><strong>{scoreBreakdown.achievementsCertifications}/10</strong></div>
+        <div className={styles.metric}><span>Impact: </span><strong>{scoreBreakdown.quantifiedImpact}/15</strong></div>
+      </section>
+
+      <div className={styles.contentGrid}>
+        <section className={styles.contentSection} data-testid="evidence-section">
+          <h3><MagnifyingGlass size={19} weight="bold" aria-hidden="true" />Evidence</h3>
+          {fieldEvidence.length === 0 ? <p>No classification evidence was found.</p> : <ul className={styles.recommendations}>
+            {fieldEvidence.map((item, index) => {
+              return (
+                <li key={`${item.field}-${index}`}>
+                  <strong>{item.field}</strong> — confidence {Math.round(item.confidence * 100)}%
+                  <div>Influential terms: {item.topTerms?.length ? item.topTerms.join(', ') : 'No model terms available'}</div>
+                  <div>Taxonomy skills: {item.matchedSkills.length ? item.matchedSkills.join(', ') : 'No taxonomy skill evidence'}</div>
+                </li>
+              );
+            })}
           </ul>
-        </div>
-      )}
+          }
+        </section>
 
       {recommendedSkills.length > 0 && (
-        <div data-testid="recommended-skills">
-          <h3>Recommended Skills</h3>
-          <ul>
+        <section className={styles.contentSection} data-testid="recommended-skills">
+          <h3><Sparkle size={19} weight="bold" aria-hidden="true" />Recommended Skills</h3>
+          <ul className={styles.tags}>
             {recommendedSkills.map((skill, idx) => (
-              <li key={idx}>{skill}</li>
+              <li className={`${styles.tag} ${styles.tagSuccess}`} key={idx}>{skill}</li>
             ))}
           </ul>
-        </div>
+        </section>
       )}
 
       {recommendations.length > 0 && (
-        <div data-testid="recommendations">
-          <h3>Recommendations</h3>
-          <ul>
+        <section className={`${styles.contentSection} ${styles.contentSectionWide}`} data-testid="recommendations">
+          <h3><Lightbulb size={19} weight="bold" aria-hidden="true" />Recommendations</h3>
+          <ul className={styles.recommendations}>
             {recommendations.map((rec, idx) => (
               <li key={idx}>{rec}</li>
             ))}
           </ul>
-        </div>
+        </section>
       )}
-    </div>
+      </div>
+    </article>
   );
 };

@@ -1,0 +1,53 @@
+.page {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(420px, 0.85fr);
+}
+.story {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: clamp(2rem, 5vw, 5rem);
+  border-right: 1px solid var(--line);
+  background: var(--accent);
+  color: #fffaf5;
+}
+.brand { display: flex; align-items: center; gap: 0.8rem; font-weight: 800; letter-spacing: -0.035em; }
+.brandMark { width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid rgba(255, 255, 255, 0.45); border-radius: var(--radius-small); }
+.statement { max-width: 760px; }
+.statement h1 { max-width: 11ch; margin-bottom: 1.5rem; font-size: clamp(3rem, 7vw, 7rem); line-height: 0.9; letter-spacing: -0.075em; }
+.statement p { max-width: 42ch; margin: 0; color: rgba(255, 250, 245, 0.78); font-size: 1.08rem; line-height: 1.65; }
+.note { margin: 0; font-family: var(--font-mono); font-size: 0.72rem; color: rgba(255, 250, 245, 0.7); }
+.formPane { min-height: 100dvh; display: grid; place-items: center; padding: 2rem; background: var(--canvas); }
+.card { width: min(100%, 460px); }
+.heading { margin-bottom: 2rem; }
+.heading h2 { margin-bottom: 0.6rem; font-size: clamp(2.15rem, 5vw, 3.5rem); line-height: 1; letter-spacing: -0.06em; }
+.heading p { margin: 0; color: var(--ink-soft); line-height: 1.6; }
+.form { display: grid; gap: 1rem; }
+.field { display: grid; gap: 0.5rem; }
+.field label { font-size: 0.82rem; font-weight: 750; }
+.field input {
+  width: 100%;
+  height: 50px;
+  padding: 0 0.9rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--surface-strong);
+  color: var(--ink);
+}
+.field input:focus { border-color: var(--ink); }
+.demo { margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--line); }
+.demoTitle { margin-bottom: 0.75rem; color: var(--ink-muted); font-family: var(--font-mono); font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; }
+.account { display: grid; grid-template-columns: 58px minmax(0, 1fr); gap: 0.7rem; padding: 0.65rem 0; color: var(--ink-soft); font-size: 0.78rem; }
+.account + .account { border-top: 1px solid var(--line); }
+.account strong { color: var(--ink); }
+.account code { overflow-wrap: anywhere; font-family: var(--font-mono); color: var(--ink-soft); }
+
+@media (max-width: 900px) {
+  .page { grid-template-columns: 1fr; }
+  .story { min-height: 360px; padding: 2rem 1.25rem; }
+  .statement h1 { max-width: 9ch; font-size: clamp(3rem, 13vw, 5.5rem); }
+  .note { display: none; }
+  .formPane { min-height: auto; padding: 3.5rem 1.25rem; }
+}

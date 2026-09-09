@@ -13,7 +13,10 @@ def _to_contract(features):
         "candidateEmail": features.candidate_email,
         "skills": features.skills,
         "predictedField": features.predicted_field,
-        "fieldEvidence": features.field_evidence or [],
+        "fieldEvidence": [
+            {**item, "topTerms": item.get("topTerms", [])}
+            for item in (features.field_evidence or [])
+        ],
     }
 
 

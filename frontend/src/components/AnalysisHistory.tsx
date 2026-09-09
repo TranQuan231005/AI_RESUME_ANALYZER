@@ -1,4 +1,7 @@
 import React from 'react';
+import { Trash } from '@phosphor-icons/react';
+import { Button, EmptyState } from './ui';
+import styles from './AnalysisHistory.module.css';
 
 export interface HistoryItem {
   id: string;
@@ -15,22 +18,20 @@ interface AnalysisHistoryProps {
 
 export const AnalysisHistory: React.FC<AnalysisHistoryProps> = ({ history, onSelect, onDelete }) => {
   if (!history || history.length === 0) {
-    return <div data-testid="empty-history">No analysis history found.</div>;
+    return <EmptyState testId="empty-history" title="No analysis history found." description="Your completed analyses will appear here." />;
   }
 
   return (
-    <div data-testid="analysis-history">
+    <div className={styles.history} data-testid="analysis-history">
       <h3>Analysis History</h3>
-      <ul>
+      <ul className={styles.list}>
         {history.map((item) => (
-          <li key={item.id} data-testid={`history-item-${item.id}`}>
-            <span onClick={() => onSelect(item.id)} data-testid={`select-${item.id}`} style={{ cursor: 'pointer' }}>
+          <li className={styles.item} key={item.id} data-testid={`history-item-${item.id}`}>
+            <button type="button" className={styles.select} onClick={() => onSelect(item.id)} data-testid={`select-${item.id}`}>
               {item.filename} - Score: {item.score} ({item.createdAt})
-            </span>
+            </button>
             {onDelete && (
-              <button onClick={() => onDelete(item.id)} data-testid={`delete-${item.id}`}>
-                Delete
-              </button>
+              <Button type="button" variant="danger" icon={<Trash size={17} weight="bold" aria-hidden="true" />} onClick={() => onDelete(item.id)} data-testid={`delete-${item.id}`}>Delete</Button>
             )}
           </li>
         ))}

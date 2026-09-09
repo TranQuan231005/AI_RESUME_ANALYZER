@@ -11,6 +11,11 @@ class FieldEvidence(SchemaBase):
         alias="matchedSkills",
     )
     confidence: float = Field(..., ge=0.0, le=1.0)
+    top_terms: List[str] = Field(
+        default_factory=list,
+        serialization_alias="topTerms",
+        alias="topTerms",
+    )
 
 
 class ResumeFeatures(SchemaBase):

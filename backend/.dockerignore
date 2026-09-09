@@ -1,0 +1,11 @@
+# Keep src/, Gradle build files and gradle/wrapper/ in the context.
+.gradle
+build
+out
+.git
+.vscode
+.idea
+.env
+.env.*
+*.log
+*.hprof

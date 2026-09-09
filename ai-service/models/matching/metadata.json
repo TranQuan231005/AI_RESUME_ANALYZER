@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "1.0.0",
+  "method": "HYBRID_EMBEDDING",
+  "skillWeight": 0.7,
+  "semanticWeight": 0.3,
+  "embeddingModel": "sentence-transformers/all-MiniLM-L6-v2",
+  "embeddingRevision": "f5610b47471b118dafc55f4c387822dbfc8413ae",
+  "embeddingDimensions": 384,
+  "chunking": {
+    "maxWords": 180,
+    "resumeMaxChunks": 12,
+    "jobDescriptionMaxChunks": 8
+  },
+  "calibrationStatus": "PENDING_HUMAN_REVIEW"
+}

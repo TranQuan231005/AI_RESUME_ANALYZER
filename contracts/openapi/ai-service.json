@@ -1,18 +1,58 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "AI Resume Analyzer - AI Service",
-    "description": "Internal AI service for CV parsing, extraction, scoring, matching, and Ollama orchestration.",
+    "title": "AI Service Contract API",
+    "description": "AI Service for Resume Parsing, Feature Extraction, Rubric Scoring, JD Matching, and Ollama Hybrid Enrichment.",
     "version": "1.0.0"
   },
   "paths": {
+    "/api/extract-features": {
+      "post": {
+        "tags": [
+          "Extraction"
+        ],
+        "summary": "Extract Features",
+        "operationId": "extract_features_api_extract_features_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExtractRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExtractResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/health": {
       "get": {
         "tags": [
-          "System"
+          "Health"
         ],
         "summary": "Health check",
-        "description": "Return health status and model availability.",
         "operationId": "health_check_health_get",
         "responses": {
           "200": {
@@ -31,10 +71,10 @@
     "/api/analyze-resume": {
       "post": {
         "tags": [
-          "Analysis"
+          "Resume Analysis"
         ],
         "summary": "Analyze resume PDF",
-        "description": "Extract features, classify field, score resume, and provide recommendations.",
+        "description": "Analyze resume PDF: validate, extract features, compute rubric scores and enrich with LLM.",
         "operationId": "analyze_resume_api_analyze_resume_post",
         "requestBody": {
           "content": {
@@ -155,15 +195,34 @@
         "properties": {
           "file": {
             "type": "string",
-            "contentMediaType": "application/octet-stream",
+            "format": "binary",
             "title": "File",
             "description": "Resume PDF file (max 5 MB)"
           },
+          "jdFile": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "binary"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Jdfile",
+            "description": "Job description PDF file (max 5 MB, optional if jobDescription is provided)"
+          },
           "jobDescription": {
-            "type": "string",
-            "minLength": 50,
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Jobdescription",
-            "description": "Job description text"
+            "description": "Job description text (optional if jdFile is provided)"
           },
           "targetRole": {
             "anyOf": [
@@ -180,8 +239,7 @@
         },
         "type": "object",
         "required": [
-          "file",
-          "jobDescription"
+          "file"
         ],
         "title": "Body_analyze_match_api_analyze_match_post"
       },
@@ -189,7 +247,7 @@
         "properties": {
           "file": {
             "type": "string",
-            "contentMediaType": "application/octet-stream",
+            "format": "binary",
             "title": "File",
             "description": "Resume PDF file (max 5 MB)"
           }
@@ -199,6 +257,73 @@
           "file"
         ],
         "title": "Body_analyze_resume_api_analyze_resume_post"
+      },
+      "ExtractRequest": {
+        "properties": {
+          "fileName": {
+            "type": "string",
+            "title": "Filename"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "pageCount": {
+            "type": "integer",
+            "title": "Pagecount"
+          },
+          "sizeBytes": {
+            "type": "integer",
+            "title": "Sizebytes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "fileName",
+          "text",
+          "pageCount",
+          "sizeBytes"
+        ],
+        "title": "ExtractRequest"
+      },
+      "ExtractResponse": {
+        "properties": {
+          "candidateName": {
+            "type": "string",
+            "title": "Candidatename"
+          },
+          "candidateEmail": {
+            "type": "string",
+            "title": "Candidateemail"
+          },
+          "skills": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Skills"
+          },
+          "predictedField": {
+            "type": "string",
+            "title": "Predictedfield"
+          },
+          "fieldEvidence": {
+            "items": {
+              "$ref": "#/components/schemas/app__extraction__router__FieldEvidence"
+            },
+            "type": "array",
+            "title": "Fieldevidence"
+          }
+        },
+        "type": "object",
+        "required": [
+          "candidateName",
+          "candidateEmail",
+          "skills",
+          "predictedField",
+          "fieldEvidence"
+        ],
+        "title": "ExtractResponse"
       },
       "FieldEnum": {
         "type": "string",
@@ -211,32 +336,6 @@
           "Unknown"
         ],
         "title": "FieldEnum"
-      },
-      "FieldEvidence": {
-        "properties": {
-          "field": {
-            "$ref": "#/components/schemas/FieldEnum"
-          },
-          "matchedSkills": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Matchedskills"
-          },
-          "confidence": {
-            "type": "number",
-            "maximum": 1.0,
-            "minimum": 0.0,
-            "title": "Confidence"
-          }
-        },
-        "type": "object",
-        "required": [
-          "field",
-          "confidence"
-        ],
-        "title": "FieldEvidence"
       },
       "HTTPValidationError": {
         "properties": {
@@ -261,22 +360,127 @@
           "model": {
             "type": "string",
             "title": "Model",
-            "default": "qwen3:4b"
+            "default": "qwen3:0.6b"
           },
           "ollamaReachable": {
             "type": "boolean",
             "title": "Ollamareachable",
             "default": false
+          },
+          "classifierLoaded": {
+            "type": "boolean",
+            "title": "Classifierloaded",
+            "default": false
+          },
+          "classifierModel": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Classifiermodel"
+          },
+          "embeddingModelLoaded": {
+            "type": "boolean",
+            "title": "Embeddingmodelloaded",
+            "default": false
+          },
+          "embeddingModel": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Embeddingmodel"
           }
         },
         "type": "object",
         "title": "HealthResponse"
+      },
+      "MatchBreakdown": {
+        "properties": {
+          "method": {
+            "type": "string",
+            "enum": [
+              "HYBRID_EMBEDDING",
+              "SKILL_ONLY"
+            ],
+            "title": "Method"
+          },
+          "skillScore": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Skillscore"
+          },
+          "semanticScore": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Semanticscore"
+          },
+          "skillWeight": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Skillweight"
+          },
+          "semanticWeight": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Semanticweight"
+          },
+          "embeddingModel": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Embeddingmodel"
+          }
+        },
+        "type": "object",
+        "required": [
+          "method",
+          "skillScore",
+          "skillWeight",
+          "semanticWeight"
+        ],
+        "title": "MatchBreakdown"
       },
       "MatchResult": {
         "properties": {
           "fileName": {
             "type": "string",
             "title": "Filename"
+          },
+          "jdFileName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Jdfilename"
           },
           "targetRole": {
             "type": "string",
@@ -334,6 +538,9 @@
             "maxItems": 8,
             "title": "Recommendations"
           },
+          "matchBreakdown": {
+            "$ref": "#/components/schemas/MatchBreakdown"
+          },
           "ai": {
             "$ref": "#/components/schemas/AiMetadata"
           }
@@ -343,6 +550,7 @@
           "fileName",
           "targetRole",
           "matchScore",
+          "matchBreakdown",
           "ai"
         ],
         "title": "MatchResult"
@@ -387,7 +595,7 @@
           },
           "fieldEvidence": {
             "items": {
-              "$ref": "#/components/schemas/FieldEvidence"
+              "$ref": "#/components/schemas/app__schemas__features__FieldEvidence"
             },
             "type": "array",
             "title": "Fieldevidence"
@@ -525,13 +733,6 @@
           "type": {
             "type": "string",
             "title": "Error Type"
-          },
-          "input": {
-            "title": "Input"
-          },
-          "ctx": {
-            "type": "object",
-            "title": "Context"
           }
         },
         "type": "object",
@@ -541,6 +742,65 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "app__extraction__router__FieldEvidence": {
+        "properties": {
+          "field": {
+            "type": "string",
+            "title": "Field"
+          },
+          "matchedSkills": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Matchedskills"
+          },
+          "confidence": {
+            "type": "number",
+            "title": "Confidence"
+          }
+        },
+        "type": "object",
+        "required": [
+          "field",
+          "matchedSkills",
+          "confidence"
+        ],
+        "title": "FieldEvidence"
+      },
+      "app__schemas__features__FieldEvidence": {
+        "properties": {
+          "field": {
+            "$ref": "#/components/schemas/FieldEnum"
+          },
+          "matchedSkills": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Matchedskills"
+          },
+          "confidence": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence"
+          },
+          "topTerms": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Topterms"
+          }
+        },
+        "type": "object",
+        "required": [
+          "field",
+          "confidence"
+        ],
+        "title": "FieldEvidence"
       }
     }
   }

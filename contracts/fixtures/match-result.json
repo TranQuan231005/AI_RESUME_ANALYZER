@@ -16,9 +16,17 @@
     "Add a dedicated project demonstrating dashboard creation in Power BI or Tableau.",
     "Incorporate business reporting keywords into the professional summary."
   ],
+  "matchBreakdown": {
+    "method": "HYBRID_EMBEDDING",
+    "skillScore": 50,
+    "semanticScore": 93,
+    "skillWeight": 0.6,
+    "semanticWeight": 0.4,
+    "embeddingModel": "sentence-transformers/all-MiniLM-L6-v2"
+  },
   "ai": {
     "provider": "OLLAMA",
-    "model": "qwen3:4b",
+    "model": "qwen3:0.6b",
     "usedFallback": false,
     "processingMs": 3520
   }

@@ -62,12 +62,21 @@ def find_skills(text: str) -> list[str]:
     for skill in SKILL_TAXONOMY:
         for alias in skill.aliases:
             pattern = rf"(?<![a-z0-9+#]){re.escape(alias.casefold())}(?![a-z0-9+#])"
-            match = re.search(pattern, lowered)
-            if match:
-                matches.append((match.start(), -len(alias), skill.canonical_name))
+            for match in re.finditer(pattern, lowered):
+                matches.append((match.start(), match.end(), skill.canonical_name))
 
     result: list[str] = []
-    for _, _, canonical_name in sorted(matches):
+    accepted_spans: list[tuple[int, int]] = []
+    for start, end, canonical_name in sorted(
+        matches, key=lambda item: (item[0], -(item[1] - item[0]), item[2])
+    ):
+        overlaps = any(
+            start < accepted_end and end > accepted_start
+            for accepted_start, accepted_end in accepted_spans
+        )
+        if overlaps:
+            continue
+        accepted_spans.append((start, end))
         if canonical_name not in result:
             result.append(canonical_name)
     return result
