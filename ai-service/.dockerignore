@@ -1,0 +1,17 @@
+# Keep app/, models/, tests/, training/ and requirements.txt in the context.
+**/__pycache__
+**/*.py[cod]
+**/.pytest_cache
+**/.coverage
+**/htmlcov
+.venv
+venv
+env
+.git
+.vscode
+.idea
+.env
+.env.*
+*.log
+build
+dist

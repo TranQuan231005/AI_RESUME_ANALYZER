@@ -11,7 +11,6 @@ from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from starlette.concurrency import run_in_threadpool
 
 from app.document.parser import extract_pdf_content
-from app.extraction.classifier import classify_features
 from app.extraction.features import extract_features
 from app.extraction.router import router as extraction_router
 from app.ml.classifier import classify_resume_features_ml
