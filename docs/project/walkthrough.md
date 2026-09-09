@@ -7,7 +7,7 @@ This is a historical implementation note. Current merge-readiness requirements a
 ## 1. Implemented Components
 
 ### A. AI Service Core Orchestration ([`ai-service/app/main.py`](../../ai-service/app/main.py))
-- **`GET /health`**: Healthcheck endpoint returning `status="healthy"`, `model="qwen3:4b"`, and `ollamaReachable: bool`.
+- **`GET /health`**: Healthcheck endpoint returning `status="healthy"`, default `model="qwen3:0.6b"`, and `ollamaReachable: bool`.
 - **`POST /api/analyze-resume`**:
   1. Validates PDF size ($\le$ 5MB) and type.
   2. Extracts and sanitizes text into `ParsedDocument`.

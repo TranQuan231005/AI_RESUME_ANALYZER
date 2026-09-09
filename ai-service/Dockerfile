@@ -13,12 +13,12 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application source
-COPY . .
-
 # Resolve the immutable embedding revision while building; runtime stays offline.
-RUN python -c "from sentence_transformers import SentenceTransformer; m=SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2', revision='f5610b47471b118dafc55f4c387822dbfc8413ae', device='cpu'); m.save('/opt/models/all-MiniLM-L6-v2')" \
-    && python -c "import joblib; joblib.load('/app/models/classifier/classifier_pipeline.joblib')" \
+RUN python -c "from sentence_transformers import SentenceTransformer; m=SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2', revision='f5610b47471b118dafc55f4c387822dbfc8413ae', device='cpu'); m.save('/opt/models/all-MiniLM-L6-v2')"
+
+# Source edits retain the expensive dependency/model layers above.
+COPY . .
+RUN python -c "import joblib; joblib.load('/app/models/classifier/classifier_pipeline.joblib')" \
     && python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('/opt/models/all-MiniLM-L6-v2', device='cpu', local_files_only=True)"
 
 EXPOSE 8000

@@ -1,5 +1,7 @@
 # AI Resume Analyzer
 
+Qwen3 0.6B is the default runtime model. See [Ollama setup and diagnostics](docs/project/OLLAMA_LOCAL_DEMO.md) for startup commands. Published human-review scores describe the historical Qwen 4B run, not the current 0.6B model.
+
 AI Resume Analyzer là ứng dụng web chạy local giúp đánh giá CV tiếng Anh, phân loại lĩnh vực bằng mô hình học máy, so khớp CV–JD bằng sentence embedding và đưa ra gợi ý có cấu trúc. Ollama chỉ làm giàu nội dung diễn giải; pipeline chấm điểm và kết quả cốt lõi vẫn hoạt động khi Ollama không sẵn sàng.
 
 > Trạng thái: MVP đã triển khai đủ 5 luồng chính — đăng nhập, phân tích CV, JD matching, lịch sử người dùng và admin dashboard.
@@ -48,7 +50,7 @@ flowchart LR
     AI --> Parser[PDF extraction + scoring]
     AI --> Classifier[TF-IDF classifier + OOD gate]
     AI --> Matcher[MiniLM semantic matcher]
-    AI -->|Optional enrichment| Ollama[Ollama / qwen3:4b]
+    AI -->|Optional enrichment| Ollama[Ollama / qwen3:0.6b]
     AI -. Ollama unavailable .-> Fallback[Rule-based fallback]
 ```
 
@@ -62,7 +64,7 @@ Spring Boot là ranh giới bảo mật và điều phối chính. Frontend khô
 | Backend | Java 21, Spring Boot 3.3, Spring Security, JPA, Flyway |
 | AI service | Python 3.11, FastAPI, Pydantic, pypdf, scikit-learn, sentence-transformers |
 | Database | MySQL 8; H2 dùng cho test và chạy backend độc lập |
-| Local AI | Ollama với model mặc định `qwen3:4b` |
+| Local AI | Ollama với model mặc định `qwen3:0.6b` |
 | Testing | Jest, Testing Library, JUnit, pytest |
 | Runtime & CI | Docker Compose, GitHub Actions |
 
@@ -121,7 +123,7 @@ Các giá trị trong `.env.example` phù hợp cho demo local. Hãy thay `JWT_S
 ### 2. Chuẩn bị Ollama (tùy chọn)
 
 ```bash
-ollama pull qwen3:4b
+ollama pull qwen3:0.6b
 ollama serve
 ```
 
@@ -208,7 +210,7 @@ Vite chạy tại `http://localhost:5173` và proxy các request `/api` sang `VI
 | `AI_SERVICE_URL` | `http://localhost:8000` | URL AI service cho backend |
 | `AI_TIMEOUT_SECONDS` | `60` | Timeout khi gọi AI/Ollama |
 | `OLLAMA_BASE_URL` | `http://localhost:11434` | Ollama endpoint |
-| `OLLAMA_MODEL` | `qwen3:4b` | Model enrichment |
+| `OLLAMA_MODEL` | `qwen3:0.6b` | Model enrichment; 4B có thể chọn bằng biến môi trường |
 | `CLASSIFIER_ARTIFACT_DIR` | `ai-service/models/classifier` khi local | Classifier pipeline và metadata |
 | `MATCHING_CONFIG_PATH` | `ai-service/models/matching/metadata.json` khi local | Trọng số matching đã version hóa |
 | `EMBEDDING_MODEL_PATH` | `ai-service/models/all-MiniLM-L6-v2` khi local | Model embedding offline; Docker dùng `/opt/models/all-MiniLM-L6-v2` |
@@ -316,7 +318,7 @@ GitHub Actions chạy type-check/test/build frontend, Gradle tests, pytest và k
 
 Thư mục [`sample_files/resumes/`](sample_files/resumes/) chứa CV synthetic theo nhóm chuyên môn và các trường hợp biên. [`sample_files/job_descriptions/`](sample_files/job_descriptions/) chứa JD demo; [`sample_files/manual/`](sample_files/manual/) chỉ chứa text-PDF synthetic với địa chỉ `example.test`, dùng cho demo upload và không được dùng cho training/evaluation.
 
-250 CV in-domain và 100 OOD đều là synthetic controlled benchmark, không chứng minh hiệu quả trên CV thực tế. Matching có 70 cặp nhưng quality report giữ trạng thái `PENDING HUMAN REVIEW` cho đến khi đủ hai reviewer độc lập. LLM schema-only cũng không được diễn giải là chất lượng Qwen. Xem [`evaluation/reports/`](evaluation/reports/).
+250 CV in-domain và 100 OOD đều là synthetic controlled benchmark, không chứng minh hiệu quả trên CV thực tế. Matching đã có hai reviewer cho đủ 70 cặp và báo cáo đã được công bố; MAE cao và Spearman gần 0 giới hạn khả năng khẳng định chất lượng xếp hạng. Báo cáo LLM hiện có thuộc Qwen3 4B, không áp dụng cho model mặc định 0.6B. LLM schema-only chỉ kiểm tra cấu trúc/validator. Xem [`evaluation/reports/`](evaluation/reports/).
 
 ## Giới hạn phạm vi MVP
 

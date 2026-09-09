@@ -1,5 +1,7 @@
 # AI Upgrade Progress Tracking
 
+Runtime update: the default model is now `qwen3:0.6b`. Batch 5 completion below refers only to the saved **Qwen3 4B** evaluation and its 40 human reviews. No human quality metric has been published for 0.6B. See [Ollama runtime evidence](OLLAMA_RELIABILITY_PLAN.md).
+
 | Batch | Status | Implemented remediation | Acceptance still open |
 |---|---|---|---|
 | Batch 0 — Audit & Baseline | COMPLETED | Baseline captured before remediation. | None. |

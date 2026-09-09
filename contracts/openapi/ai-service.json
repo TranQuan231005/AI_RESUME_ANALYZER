@@ -360,7 +360,7 @@
           "model": {
             "type": "string",
             "title": "Model",
-            "default": "qwen3:4b"
+            "default": "qwen3:0.6b"
           },
           "ollamaReachable": {
             "type": "boolean",

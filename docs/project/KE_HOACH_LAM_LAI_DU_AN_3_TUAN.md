@@ -1,6 +1,6 @@
 # Kế hoạch xây dựng lại AI Resume Analyzer trong 3 tuần
 
-> Single source of truth cho nhóm 5 thành viên. Tài liệu này đủ để tạo repo mới, tạo GitHub Issue, phát triển, kiểm thử, chạy demo local và chuẩn bị vấn đáp.
+> Kế hoạch thiết kế ban đầu cho nhóm 5 thành viên, giữ lại để tham khảo lịch sử. Hướng dẫn runtime hiện tại nằm trong [README](../../README.md) và [Ollama local demo](OLLAMA_LOCAL_DEMO.md). Model mặc định hiện tại là Qwen3 0.6B; các cấu hình 4B bên dưới mô tả thiết kế/đánh giá trước đây.
 
 ## 0. Quyết định đã khóa
 

@@ -32,6 +32,7 @@ scripts/config.yml
 /skills-lock.json
 
 # System & IDE Files
+/.vscode/
 .DS_Store
 Thumbs.db
 *.log

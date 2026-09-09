@@ -12,7 +12,7 @@ TF-IDF cosine remains only a lexical baseline inside `evaluation/scripts/evaluat
 
 ## Calibration status
 
-**PENDING HUMAN REVIEW.** The 70 synthetic pairs are correctly split 35/35, but each needs two independent reviewer scores. After review:
+**REVIEW COMPLETE.** All 70 synthetic pairs have two pseudonymous reviews; the disagreement above 15 was adjudicated at 78. The split remains 35/35. See the [generated report](matching.md) for results and retain the synthetic-only limitation. To reproduce the report:
 
 ```bash
 python evaluation/scripts/evaluate_matching.py --output evaluation/reports/matching.md

@@ -31,7 +31,7 @@
   ],
   "ai": {
     "provider": "OLLAMA",
-    "model": "qwen3:4b",
+    "model": "qwen3:0.6b",
     "usedFallback": false,
     "processingMs": 3180
   }

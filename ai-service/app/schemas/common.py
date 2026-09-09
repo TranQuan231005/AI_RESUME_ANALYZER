@@ -65,7 +65,7 @@ class ApiError(SchemaBase):
 
 class HealthResponse(SchemaBase):
     status: str = "healthy"
-    model: str = "qwen3:4b"
+    model: str = "qwen3:0.6b"
     ollama_reachable: bool = Field(
         default=False,
         serialization_alias="ollamaReachable",

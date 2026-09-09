@@ -1,5 +1,7 @@
 # Reproducible human-review evidence
 
+The saved LLM outputs/reviews in this directory describe **Qwen3 4B**. Runtime now defaults to Qwen3 0.6B; these reviews and the published LLM metrics must not be attributed to 0.6B. Retain the original model metadata and scores when changing runtime configuration.
+
 This directory holds review evidence committed with pseudonymous IDs only: `reviewer-1` and `reviewer-2`. Do not store reviewer names, email addresses, or raw personal CV data here.
 
 Create blinded matching forms for the two reviewers with:
