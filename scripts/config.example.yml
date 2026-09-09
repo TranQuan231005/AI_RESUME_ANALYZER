@@ -1,4 +1,0 @@
-# Tokens must be provided through the GITHUB_TOKEN environment variable.
-# This file documents non-secret defaults only.
-repo_owner: "TranQuan231005"
-repo_name: "AI_RESUME_ANALYZER"

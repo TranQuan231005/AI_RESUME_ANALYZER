@@ -15,10 +15,10 @@ SPEC.loader.exec_module(scan_repository)
 
 def test_local_file_url_is_rejected():
     assert scan_repository.markdown_link_error(
-        ROOT / "walkthrough.md", "file:///d:/AI_RESUME_ANALYZER/docs/project/walkthrough.md"
+        ROOT / "README.md", "file:///d:/AI_RESUME_ANALYZER/docs/project/OLLAMA_LOCAL_DEMO.md"
     ) == "local file URL"
 
 
 def test_https_and_relative_markdown_links_are_allowed_when_resolvable():
     assert scan_repository.markdown_link_error(ROOT / "README.md", "https://example.test/docs") is None
-    assert scan_repository.markdown_link_error(ROOT / "README.md", "docs/project/walkthrough.md") is None
+    assert scan_repository.markdown_link_error(ROOT / "README.md", "docs/project/OLLAMA_LOCAL_DEMO.md") is None

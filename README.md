@@ -1,5 +1,7 @@
 # AI Resume Analyzer
 
+Documentation: [guides](docs/README.md) · [evaluation guide](evaluation/README.md).
+
 Qwen3 0.6B is the default runtime model. See [Ollama setup and diagnostics](docs/project/OLLAMA_LOCAL_DEMO.md) for startup commands. Published human-review scores describe the historical Qwen 4B run, not the current 0.6B model.
 
 AI Resume Analyzer là ứng dụng web chạy local giúp đánh giá CV tiếng Anh, phân loại lĩnh vực bằng mô hình học máy, so khớp CV–JD bằng sentence embedding và đưa ra gợi ý có cấu trúc. Ollama chỉ làm giàu nội dung diễn giải; pipeline chấm điểm và kết quả cốt lõi vẫn hoạt động khi Ollama không sẵn sàng.
@@ -95,7 +97,7 @@ Spring Boot là ranh giới bảo mật và điều phối chính. Frontend khô
 │   ├── scripts/                # build, validate và evaluate
 │   └── reports/
 ├── sample_files/               # resumes, job_descriptions và manual PDFs
-├── docs/                       # project notes, prompts và images
+├── docs/                       # operating guides and images
 ├── scripts/                    # OpenAPI export và repository utilities
 ├── .github/workflows/ci.yml    # CI cho frontend, backend và AI service
 ├── docker-compose.yml
@@ -295,13 +297,7 @@ python evaluation/scripts/evaluate_matching.py --output /tmp/matching-report.md 
 
 Đánh giá Qwen thật cần Ollama, output lưu riêng và hai reviewer độc lập:
 
-```bash
-python evaluation/scripts/evaluate_llm.py --mode live --output /tmp/llm-live.jsonl
-python evaluation/scripts/summarize_llm_reviews.py \
-  --live-output /tmp/llm-live.jsonl \
-  --reviews evaluation/datasets/llm/human_review_template.csv \
-  --output evaluation/reports/llm.md
-```
+See the [evaluation guide](evaluation/README.md) for live generation and independent human review. Saved scores apply only to the reviewed model and outputs.
 
 Huấn luyện lại classifier bằng Python 3.11:
 
@@ -328,11 +324,11 @@ Thư mục [`sample_files/resumes/`](sample_files/resumes/) chứa CV synthetic 
 - Không có dark mode hoặc analytics theo chuỗi thời gian.
 - UI, API messages, fixtures và AI output sử dụng tiếng Anh.
 
-## Tài liệu liên quan
+## Documentation
 
-- [`docs/project/KE_HOACH_LAM_LAI_DU_AN_3_TUAN.md`](docs/project/KE_HOACH_LAM_LAI_DU_AN_3_TUAN.md) — kế hoạch triển khai 3 tuần.
-- [`docs/project/CHECKLIST_DU_AN.md`](docs/project/CHECKLIST_DU_AN.md) — roadmap và acceptance checklist.
-- [`contracts/M0_CONTRACT_APPROVAL.md`](contracts/M0_CONTRACT_APPROVAL.md) — contract freeze và approval gate.
+- [Ollama setup and diagnostics](docs/project/OLLAMA_LOCAL_DEMO.md).
+- [Evaluation and review evidence](evaluation/README.md).
+- [API specifications](contracts/openapi/) and [fixtures](contracts/fixtures/).
 
 ## License
 

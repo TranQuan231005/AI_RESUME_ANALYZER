@@ -4,7 +4,7 @@
 
 The default runtime model is `qwen3:0.6b` in Python, Compose, the environment template and the health schema. Historical human evaluation used `qwen3:4b`. On the observed Windows machine (5.87 GiB usable RAM), running 4B together with Docker left about 0.38 GiB free. A short standalone greeting benchmark does not represent the full-stack workload.
 
-No model override file is needed for 0.6B. The 4B human-review scores **do not apply** to this model. Saved review evidence remains unchanged. The former experimental model override has been removed.
+No model override file is needed for 0.6B. The 4B human-review scores **do not apply** to this model. Saved review evidence remains unchanged.
 
 For a fresh stack with default ports available, run from the repository root in PowerShell:
 
@@ -15,14 +15,14 @@ docker compose up --build --detach
 
 Do not start a second default stack over the existing one. The repository still has fixed container names; this change does not resolve general multi-project isolation.
 
-For the existing stack on this machine (`ai-resume-online`, frontend 15173, backend 18080, AI 18000), port mappings now live in `docker-compose.local.yml` in the repository. To rebuild and update only AI:
+For the optional alternate-port stack (`ai-resume-online`, frontend 15173, backend 18080, AI 18000), port mappings now live in `docker-compose.local.yml` in the repository. To rebuild and update only AI:
 
 ```powershell
 docker compose -p ai-resume-online -f docker-compose.yml -f docker-compose.local.yml build ai-service
 docker compose -p ai-resume-online -f docker-compose.yml -f docker-compose.local.yml up --detach --no-build --no-deps ai-service
 ```
 
-To start the complete local stack, use the same two files and project name with `up --build --detach`. The old file in the Windows temporary directory is no longer needed. Do not use `down --volumes` on this stack if its saved analyses should be retained.
+To start the complete local stack, use the same two files and project name with `up --build --detach`. Do not use `down --volumes` on this stack if its saved analyses should be retained.
 
 To explicitly select the historical model, set `$env:OLLAMA_MODEL = 'qwen3:4b'` before running Compose or an evaluator. Remove that environment variable to return to the 0.6B default. When evaluating 4B, save new outputs separately; never overwrite reviewed outputs or reuse their scores for a different model run.
 
@@ -57,3 +57,17 @@ The first health/model load can take substantially longer on a low-memory machin
 Generation disables thinking explicitly. Synchronous parsing, classification, matching and Ollama work are dispatched to a thread pool so the async event loop can serve other requests. This improves responsiveness; it does not make CPU inference intrinsically faster. Model download now precedes source copy in the Dockerfile, so later source edits reuse the pinned embedding layer.
 
 References: [FastAPI concurrency](https://fastapi.tiangolo.com/async/), [Ollama thinking control](https://docs.ollama.com/capabilities/thinking), [Ollama performance metrics](https://docs.ollama.com/api/usage).
+
+## Recorded performance and limitations
+
+Measurements from 2026-09-09 on a Windows host with 5.87 GiB usable RAM:
+
+| Request path | Resume | Match | Result |
+|---|---:|---:|---|
+| Warm 0.6B through backend, final verification | 10.19 s | 22.33 s | OLLAMA, no fallback |
+| First request per flow, earlier 0.6B verification | 43.81 s | 102.05 s | OLLAMA, no fallback |
+| Unreachable Ollama, cold isolated AI | 14.11 s | 56.59 s | RULE_BASED; matching retained HYBRID_EMBEDDING |
+
+These are individual historical observations, not p50/p95, performance guarantees or a controlled model comparison. Embedding initialization contributed heavily to cold requests. Raising the Ollama timeout alone did not resolve the observed 4B failures under memory pressure.
+
+The default-model verification recorded 133 Python tests passing, OpenAPI and repository/history checks passing, and a full-stack smoke passing authentication, analysis, matching, history, admin and privacy assertions. These records do not replace running current CI checks. Human quality scores remain specific to the saved 4B outputs; see the [evaluation guide](../../evaluation/README.md).

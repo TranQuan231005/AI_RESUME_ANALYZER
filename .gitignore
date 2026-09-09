@@ -25,6 +25,7 @@ env/
 .env.local
 .env.*.local
 scripts/config.yml
+scripts/maintenance/config.yml
 
 # Local agent/plugin tooling (not part of the product source)
 /.agents/
