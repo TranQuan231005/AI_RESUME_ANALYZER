@@ -105,6 +105,7 @@ class OllamaClient:
             "prompt": user_prompt,
             "stream": False,
             "format": "json",
+            "think": False,
             "keep_alive": self.config.keep_alive,
             "options": {"temperature": self.config.temperature},
         }
