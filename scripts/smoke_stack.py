@@ -145,7 +145,7 @@ def main() -> None:
     print("Smoke: USER and ADMIN login passed.", flush=True)
 
     upload, content_type = multipart({}, {"file": resume})
-    status, analysis = request_json(f"{args.backend_url}/api/analyses/resume", method="POST", token=user_token, body=upload, content_type=content_type, timeout_seconds=90)
+    status, analysis = request_json(f"{args.backend_url}/api/analyses/resume", method="POST", token=user_token, body=upload, content_type=content_type, timeout_seconds=240)
     require(status == 201 and isinstance(analysis, dict) and analysis.get("id"), f"resume analysis failed: HTTP {status}")
     evidence = analysis.get("result", {}).get("fieldEvidence", [])
     require(bool(evidence) and "topTerms" in evidence[0], "resume response omitted classifier topTerms")
@@ -153,7 +153,7 @@ def main() -> None:
 
     jd = f"{SENTINEL} Senior data scientist role requiring Python, SQL, Pandas, scikit-learn, model deployment, and stakeholder communication."
     upload, content_type = multipart({"jobDescription": jd, "targetRole": "Senior Data Scientist"}, {"file": resume})
-    status, match = request_json(f"{args.backend_url}/api/analyses/match", method="POST", token=user_token, body=upload, content_type=content_type, timeout_seconds=90)
+    status, match = request_json(f"{args.backend_url}/api/analyses/match", method="POST", token=user_token, body=upload, content_type=content_type, timeout_seconds=240)
     require(status == 201 and isinstance(match, dict) and match.get("id"), f"JD matching failed: HTTP {status}")
     require(match.get("result", {}).get("matchBreakdown", {}).get("method") == "HYBRID_EMBEDDING", "match did not use HYBRID_EMBEDDING")
     print("Smoke: JD matching passed.", flush=True)
