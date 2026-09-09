@@ -1,0 +1,48 @@
+%PDF-1.4
+% synthetic fixture
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>
+endobj
+4 0 obj
+<< /Length 401 >>
+stream
+BT
+/F1 11 Tf
+72 740 Td
+15 TL
+(SYNTHETIC DEMO FIXTURE - NOT FOR TRAINING OR EVALUATION) Tj
+T*
+(Fixture file: High_Score_AI_CV_Tran.pdf) Tj
+T*
+(Synthetic resume sample for local upload demonstrations.) Tj
+T*
+(Contact: demo.candidate@example.test) Tj
+T*
+(Skills: Python, SQL, Docker, machine learning, communication.) Tj
+T*
+(All names, contact details, and claims in this fixture are placeholders.) Tj
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 6
+0000000000 65535 f
+0000000029 00000 n
+0000000078 00000 n
+0000000135 00000 n
+0000000261 00000 n
+0000000713 00000 n
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+783
+%%EOF

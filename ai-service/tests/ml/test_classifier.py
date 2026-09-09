@@ -1,5 +1,6 @@
 """Unit tests for ML classifier inference, explainability, threshold gating, and fallback."""
 from pathlib import Path
+import logging
 import pytest
 
 from app.extraction.features import ResumeFeatures, extract_features
@@ -90,6 +91,29 @@ def test_missing_model_graceful_fallback(tmp_path: Path):
     assert res.used_model is False
     assert res.predicted_field in ["Web Development", "Unknown"]
     assert isinstance(res.field_evidence, list)
+
+
+def test_inference_error_uses_fallback_without_logging_resume_text(
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+):
+    class ExplodingPipeline:
+        classes_ = ["Data Science"]
+
+        def predict_proba(self, _texts):
+            raise RuntimeError("synthetic inference failure")
+
+    resume_text = "PRIVATE_RESUME_TEXT_DO_NOT_LOG Python and SQL"
+    monkeypatch.setattr("app.ml.classifier.load_classifier_model", lambda *_args: ExplodingPipeline())
+    monkeypatch.setattr("app.ml.classifier.get_model_metadata", lambda *_args: {})
+
+    with caplog.at_level(logging.WARNING):
+        result = MLClassificationEngine().predict(resume_text)
+
+    assert result.used_model is False
+    assert result.predicted_field in ["Data Science", "Unknown"]
+    assert "synthetic inference failure" in caplog.text
+    assert resume_text not in caplog.text
 
 
 def test_classify_resume_features_ml_wrapper():

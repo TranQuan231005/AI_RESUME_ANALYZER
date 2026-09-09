@@ -28,6 +28,8 @@ describe('MatchResult', () => {
     expect(screen.getByText('Match Score: 67/100')).toBeTruthy();
     expect(screen.getByText('Target Role: Data Analyst')).toBeTruthy();
     expect(screen.getByTestId('matched-skills').textContent).toContain('Python');
+    expect(screen.getByTestId('match-breakdown').textContent).toContain('HYBRID_EMBEDDING');
+    expect(screen.getByTestId('match-breakdown').textContent).toContain('all-MiniLM-L6-v2');
     expect(screen.getByTestId('missing-skills').textContent).toContain('Power BI');
     expect(screen.getByTestId('ats-keywords').textContent).toContain('data visualization');
     expect(screen.getByTestId('strengths').textContent).toContain('Strong core programming');

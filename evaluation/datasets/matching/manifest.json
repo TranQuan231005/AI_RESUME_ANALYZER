@@ -1,0 +1,32 @@
+{
+  "datasetVersion": "2.0.0",
+  "totalPairs": 70,
+  "domainDistribution": {
+    "Data Science": 18,
+    "Web Development": 21,
+    "Android Development": 6,
+    "iOS Development": 5,
+    "UI/UX": 10,
+    "Cross-Domain": 10
+  },
+  "scenarioDistribution": {
+    "standard_match": 10,
+    "partial_match": 10,
+    "paraphrase_match": 10,
+    "missing_required_skill": 10,
+    "keyword_stuffing": 10,
+    "cross_domain": 10,
+    "no_skills_jd": 10
+  },
+  "splitDistribution": {
+    "calibration": 35,
+    "test": 35
+  },
+  "reviewStatus": "READY",
+  "scoreRange": {
+    "kind": "provisionalSyntheticTargetNotHumanGroundTruth",
+    "min": 10,
+    "max": 96,
+    "mean": 49.11
+  }
+}

@@ -57,6 +57,14 @@ export interface MatchResult {
   strengths: string[];
   weaknesses: string[];
   recommendations: string[];
+  matchBreakdown: {
+    method: 'HYBRID_EMBEDDING' | 'SKILL_ONLY';
+    skillScore: number;
+    semanticScore: number | null;
+    skillWeight: number;
+    semanticWeight: number;
+    embeddingModel: string | null;
+  };
   ai: AiMetadata;
 }
 

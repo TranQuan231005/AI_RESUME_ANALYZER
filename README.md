@@ -1,6 +1,10 @@
 # AI Resume Analyzer
 
-AI Resume Analyzer là ứng dụng web chạy local giúp đánh giá CV tiếng Anh, so khớp CV với mô tả công việc và đưa ra gợi ý cải thiện có cấu trúc. Hệ thống kết hợp pipeline chấm điểm deterministic với Ollama để vẫn hoạt động ổn định khi mô hình AI local không sẵn sàng.
+Documentation: [guides](docs/README.md) · [evaluation guide](evaluation/README.md).
+
+Qwen3 0.6B is the default runtime model. See [Ollama setup and diagnostics](docs/project/OLLAMA_LOCAL_DEMO.md) for startup commands. Published human-review scores describe the historical Qwen 4B run, not the current 0.6B model.
+
+AI Resume Analyzer là ứng dụng web chạy local giúp đánh giá CV tiếng Anh, phân loại lĩnh vực bằng mô hình học máy, so khớp CV–JD bằng sentence embedding và đưa ra gợi ý có cấu trúc. Ollama chỉ làm giàu nội dung diễn giải; pipeline chấm điểm và kết quả cốt lõi vẫn hoạt động khi Ollama không sẵn sàng.
 
 > Trạng thái: MVP đã triển khai đủ 5 luồng chính — đăng nhập, phân tích CV, JD matching, lịch sử người dùng và admin dashboard.
 
@@ -31,7 +35,7 @@ AI Resume Analyzer là ứng dụng web chạy local giúp đánh giá CV tiến
 - Upload CV tiếng Anh ở định dạng PDF, tối đa 5 MB.
 - Trích xuất tên, email, kỹ năng và nhóm chuyên môn từ CV.
 - Chấm điểm CV theo 8 nhóm tiêu chí với tổng điểm 0–100.
-- So khớp CV với JD dạng PDF hoặc văn bản, trả về matched skills, missing skills và ATS keywords.
+- So khớp CV với JD bằng skill coverage và `all-MiniLM-L6-v2`, trả về breakdown, matched skills, missing skills và ATS keywords.
 - Đề xuất kỹ năng và hành động cải thiện CV.
 - Lưu kết quả có cấu trúc để người dùng xem lại lịch sử; không lưu file CV hoặc nội dung JD gốc.
 - Admin dashboard hiển thị users, analyses, fallback rate và latency của AI pipeline.
@@ -45,8 +49,10 @@ flowchart LR
     Browser[React + TypeScript] -->|REST / JWT| Backend[Spring Boot API]
     Backend -->|JPA / Flyway| Database[(MySQL 8)]
     Backend -->|HTTP multipart| AI[FastAPI AI Service]
-    AI --> Parser[PDF extraction + deterministic engines]
-    AI -->|Optional enrichment| Ollama[Ollama / qwen3:4b]
+    AI --> Parser[PDF extraction + scoring]
+    AI --> Classifier[TF-IDF classifier + OOD gate]
+    AI --> Matcher[MiniLM semantic matcher]
+    AI -->|Optional enrichment| Ollama[Ollama / qwen3:0.6b]
     AI -. Ollama unavailable .-> Fallback[Rule-based fallback]
 ```
 
@@ -58,9 +64,9 @@ Spring Boot là ranh giới bảo mật và điều phối chính. Frontend khô
 | --- | --- |
 | Frontend | React 18, TypeScript, Vite 7, CSS Modules, Phosphor Icons |
 | Backend | Java 21, Spring Boot 3.3, Spring Security, JPA, Flyway |
-| AI service | Python 3.11, FastAPI, Pydantic, pypdf |
+| AI service | Python 3.11, FastAPI, Pydantic, pypdf, scikit-learn, sentence-transformers |
 | Database | MySQL 8; H2 dùng cho test và chạy backend độc lập |
-| Local AI | Ollama với model mặc định `qwen3:4b` |
+| Local AI | Ollama với model mặc định `qwen3:0.6b` |
 | Testing | Jest, Testing Library, JUnit, pytest |
 | Runtime & CI | Docker Compose, GitHub Actions |
 
@@ -78,13 +84,20 @@ Spring Boot là ranh giới bảo mật và điều phối chính. Frontend khô
 .
 ├── frontend/                   # React application, pages, UI primitives và tests
 ├── backend/                    # Spring Boot API, security, persistence và migrations
-├── ai-service/                 # PDF parsing, scoring, matching, Ollama và tests
+├── ai-service/
+│   ├── app/                    # parsing, extraction, scoring, matching, ML và LLM
+│   ├── models/                 # classifier artifact và matching metadata
+│   ├── training/               # classifier training
+│   └── tests/
 ├── contracts/
 │   ├── openapi/                # Public API và AI service specifications
 │   └── fixtures/               # Request, response và error fixtures
-├── evaluation/                 # Dataset, ground truth và benchmark runner
-├── sample_files/               # CV/JD mẫu để demo
-├── docs/images/                # Ảnh giao diện dùng trong README
+├── evaluation/
+│   ├── datasets/               # classification, matching, LLM và legacy fixtures
+│   ├── scripts/                # build, validate và evaluate
+│   └── reports/
+├── sample_files/               # resumes, job_descriptions và manual PDFs
+├── docs/                       # operating guides and images
 ├── scripts/                    # OpenAPI export và repository utilities
 ├── .github/workflows/ci.yml    # CI cho frontend, backend và AI service
 ├── docker-compose.yml
@@ -96,7 +109,7 @@ Spring Boot là ranh giới bảo mật và điều phối chính. Frontend khô
 ### Yêu cầu
 
 - Docker Engine/Desktop có Docker Compose.
-- Tối thiểu khoảng 4 GB RAM trống cho stack cơ bản.
+- Đủ dung lượng/RAM để build PyTorch và model embedding trong AI image.
 - Ollama là tùy chọn; không có Ollama thì hệ thống dùng deterministic fallback.
 
 ### 1. Chuẩn bị cấu hình
@@ -112,7 +125,7 @@ Các giá trị trong `.env.example` phù hợp cho demo local. Hãy thay `JWT_S
 ### 2. Chuẩn bị Ollama (tùy chọn)
 
 ```bash
-ollama pull qwen3:4b
+ollama pull qwen3:0.6b
 ollama serve
 ```
 
@@ -199,7 +212,10 @@ Vite chạy tại `http://localhost:5173` và proxy các request `/api` sang `VI
 | `AI_SERVICE_URL` | `http://localhost:8000` | URL AI service cho backend |
 | `AI_TIMEOUT_SECONDS` | `60` | Timeout khi gọi AI/Ollama |
 | `OLLAMA_BASE_URL` | `http://localhost:11434` | Ollama endpoint |
-| `OLLAMA_MODEL` | `qwen3:4b` | Model enrichment |
+| `OLLAMA_MODEL` | `qwen3:0.6b` | Model enrichment; 4B có thể chọn bằng biến môi trường |
+| `CLASSIFIER_ARTIFACT_DIR` | `ai-service/models/classifier` khi local | Classifier pipeline và metadata |
+| `MATCHING_CONFIG_PATH` | `ai-service/models/matching/metadata.json` khi local | Trọng số matching đã version hóa |
+| `EMBEDDING_MODEL_PATH` | `ai-service/models/all-MiniLM-L6-v2` khi local | Model embedding offline; Docker dùng `/opt/models/all-MiniLM-L6-v2` |
 | `VITE_API_BASE_URL` | `http://localhost:8080` | Backend target cho Vite proxy |
 
 Xem toàn bộ cấu hình tại [`.env.example`](.env.example).
@@ -224,11 +240,15 @@ Nguồn chuẩn cho request/response schema:
 - [`contracts/openapi/ai-service.json`](contracts/openapi/ai-service.json)
 - [`contracts/fixtures/`](contracts/fixtures/)
 
-## Chấm điểm và fallback
+## Pipeline AI và explainability
 
-Resume score gồm 8 nhóm tiêu chí: contact, summary, skills, education, experience, projects, achievements/certifications và quantified impact. Các engine deterministic luôn tạo được kết quả cơ bản; Ollama chỉ làm giàu thêm skills, ATS insights và recommendations.
+Resume score gồm 8 nhóm tiêu chí. Classifier chọn một trong năm lĩnh vực hoặc `Unknown`, trả confidence, influential terms và taxonomy skills. Ngưỡng `Unknown` được calibration bằng validation in-domain kết hợp OOD.
 
-Mỗi kết quả có metadata gồm provider, model, processing time và `usedFallback`. Khi Ollama không phản hồi, API trả kết quả rule-based hợp lệ thay vì làm hỏng toàn bộ luồng phân tích.
+Matching chia CV/JD thành chunk tối đa khoảng 180 từ, encode normalized embeddings 384 chiều và lấy cosine tốt nhất cho từng JD chunk. Điểm production kết hợp semantic score với skill coverage theo `ai-service/models/matching/metadata.json`; JD không có recognized skill dùng semantic 100%. Nếu embedding không tải được, response ghi rõ `SKILL_ONLY`. TF-IDF chỉ còn là baseline evaluation.
+
+Embedding dùng `sentence-transformers/all-MiniLM-L6-v2` (Apache-2.0), khóa revision `f5610b47471b118dafc55f4c387822dbfc8413ae`. Docker tải revision này ở build time và runtime không tải mạng.
+
+`ai` metadata chỉ mô tả Ollama enrichment. Model matching nằm trong `matchBreakdown`, tránh trộn hai khái niệm.
 
 ## Dữ liệu và quyền riêng tư
 
@@ -268,17 +288,33 @@ source .venv/bin/activate
 pip install -r ai-service/requirements.txt
 pytest
 python scripts/export_openapi.py --check
-python evaluation/validate_dataset.py
-python evaluation/run_evaluation.py --mode rule-only
+python evaluation/scripts/validate_classification_dataset.py
+python evaluation/scripts/validate_matching_dataset.py
+python evaluation/scripts/evaluate_llm.py --mode schema-only
+python evaluation/scripts/evaluate_classifier.py --output /tmp/classification-report.md
+python evaluation/scripts/evaluate_matching.py --output /tmp/matching-report.md --allow-pending
 ```
+
+Đánh giá Qwen thật cần Ollama, output lưu riêng và hai reviewer độc lập:
+
+See the [evaluation guide](evaluation/README.md) for live generation and independent human review. Saved scores apply only to the reviewed model and outputs.
+
+Huấn luyện lại classifier bằng Python 3.11:
+
+```bash
+python ai-service/training/train_classifier.py
+python evaluation/scripts/evaluate_classifier.py --output evaluation/reports/classification.md
+```
+
+Mọi lệnh tạo report phải chỉ định `--output`; CI ghi vào `/tmp` để không làm dirty worktree.
 
 GitHub Actions chạy type-check/test/build frontend, Gradle tests, pytest và kiểm tra OpenAPI trên push hoặc pull request vào `main`, `master` và `develop`.
 
 ## Dữ liệu demo
 
-Thư mục [`sample_files/`](sample_files/) chứa nhiều CV PDF theo nhóm chuyên môn và các trường hợp biên. File [`sample_files/job_descriptions.md`](sample_files/job_descriptions.md) cung cấp JD mẫu để thử Job Match & ATS.
+Thư mục [`sample_files/resumes/`](sample_files/resumes/) chứa CV synthetic theo nhóm chuyên môn và các trường hợp biên. [`sample_files/job_descriptions/`](sample_files/job_descriptions/) chứa JD demo; [`sample_files/manual/`](sample_files/manual/) chỉ chứa text-PDF synthetic với địa chỉ `example.test`, dùng cho demo upload và không được dùng cho training/evaluation.
 
-Evaluation dataset và ground truth nằm trong [`evaluation/`](evaluation/); báo cáo gần nhất được tạo tại [`evaluation/reports/evaluation-summary.md`](evaluation/reports/evaluation-summary.md).
+250 CV in-domain và 100 OOD đều là synthetic controlled benchmark, không chứng minh hiệu quả trên CV thực tế. Matching đã có hai reviewer cho đủ 70 cặp và báo cáo đã được công bố; MAE cao và Spearman gần 0 giới hạn khả năng khẳng định chất lượng xếp hạng. Báo cáo LLM hiện có thuộc Qwen3 4B, không áp dụng cho model mặc định 0.6B. LLM schema-only chỉ kiểm tra cấu trúc/validator. Xem [`evaluation/reports/`](evaluation/reports/).
 
 ## Giới hạn phạm vi MVP
 
@@ -288,11 +324,11 @@ Evaluation dataset và ground truth nằm trong [`evaluation/`](evaluation/); b�
 - Không có dark mode hoặc analytics theo chuỗi thời gian.
 - UI, API messages, fixtures và AI output sử dụng tiếng Anh.
 
-## Tài liệu liên quan
+## Documentation
 
-- [`KE_HOACH_LAM_LAI_DU_AN_3_TUAN.md`](KE_HOACH_LAM_LAI_DU_AN_3_TUAN.md) — kế hoạch triển khai 3 tuần.
-- [`CHECKLIST_DU_AN.md`](CHECKLIST_DU_AN.md) — roadmap và acceptance checklist.
-- [`contracts/M0_CONTRACT_APPROVAL.md`](contracts/M0_CONTRACT_APPROVAL.md) — contract freeze và approval gate.
+- [Ollama setup and diagnostics](docs/project/OLLAMA_LOCAL_DEMO.md).
+- [Evaluation and review evidence](evaluation/README.md).
+- [API specifications](contracts/openapi/) and [fixtures](contracts/fixtures/).
 
 ## License
 

@@ -14,6 +14,8 @@ import datetime
 import json
 import logging
 import os
+import hashlib
+import platform
 from pathlib import Path
 import sys
 import time
@@ -21,6 +23,7 @@ from typing import Any, Dict, List, Tuple
 
 import joblib
 import numpy as np
+import sklearn
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
@@ -157,10 +160,12 @@ def run_cross_validation(
 def calibrate_unknown_threshold(
     pipeline: Pipeline,
     val_samples: List[Dict[str, Any]],
+    ood_samples: List[Dict[str, Any]],
 ) -> Tuple[float, Dict[str, Any]]:
-    """Calibrate confidence threshold for 'Unknown' predictions using validation split."""
-    val_texts = [s["text"] for s in val_samples]
-    val_labels = [s["label"] for s in val_samples]
+    """Optimize six-label Macro F1 while recording OOD false acceptance."""
+    combined = val_samples + ood_samples
+    val_texts = [s["text"] for s in combined]
+    val_labels = [s["label"] for s in combined]
 
     probs = pipeline.predict_proba(val_texts)
     max_probs = np.max(probs, axis=1)
@@ -169,24 +174,31 @@ def calibrate_unknown_threshold(
     # Candidate thresholds: 0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50
     threshold_stats = {}
     best_thresh = 0.35
+    best_key = (-1.0, -1.0)
 
-    for thresh in [0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50]:
+    for thresh in np.arange(0.20, 0.91, 0.05):
         gated_preds = [preds[i] if max_probs[i] >= thresh else "Unknown" for i in range(len(preds))]
-        acc = accuracy_score(val_labels, gated_preds)
-        coverage = sum(1 for p in gated_preds if p != "Unknown") / len(gated_preds)
-        threshold_stats[str(thresh)] = {
-            "accuracy": round(float(acc), 4),
-            "coverage": round(float(coverage), 4),
-            "unknown_count": sum(1 for p in gated_preds if p == "Unknown"),
+        macro = f1_score(val_labels, gated_preds, labels=list(FIELD_NAMES), average="macro", zero_division=0)
+        ood_preds = gated_preds[len(val_samples):]
+        known_preds = gated_preds[:len(val_samples)]
+        false_acceptance = sum(p != "Unknown" for p in ood_preds) / len(ood_preds)
+        known_rejection = sum(p == "Unknown" for p in known_preds) / len(known_preds)
+        key = (float(macro), -float(false_acceptance))
+        if key > best_key:
+            best_key, best_thresh = key, float(thresh)
+        threshold_stats[f"{thresh:.2f}"] = {
+            "sixLabelMacroF1": round(float(macro), 4),
+            "oodFalseAcceptanceRate": round(float(false_acceptance), 4),
+            "knownClassRejectionRate": round(float(known_rejection), 4),
         }
 
-    return best_thresh, threshold_stats
+    return round(best_thresh, 2), threshold_stats
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Train resume field classifier.")
-    parser.add_argument("--data-dir", type=str, default="evaluation/classification", help="Path to classification dataset directory")
-    parser.add_argument("--artifacts-dir", type=str, default="artifacts/classifier", help="Path to save trained artifacts")
+    parser.add_argument("--data-dir", type=str, default="evaluation/datasets/classification", help="Path to classification dataset directory")
+    parser.add_argument("--artifacts-dir", type=str, default="ai-service/models/classifier", help="Path to save trained artifacts")
     parser.add_argument("--seed", type=int, default=42, help="Random seed for reproducibility")
     args = parser.parse_args()
 
@@ -203,6 +215,7 @@ def main() -> None:
 
     train_samples = load_jsonl(train_path)
     val_samples = load_jsonl(val_path)
+    ood_val_samples = load_jsonl(data_dir / "ood-validation.jsonl")
 
     logger.info("Loaded dataset: %d train samples, %d validation samples", len(train_samples), len(val_samples))
 
@@ -213,15 +226,12 @@ def main() -> None:
     train_texts = [s["text"] for s in train_samples]
     train_labels = [s["label"] for s in train_samples]
 
-    combined_texts = train_texts + [s["text"] for s in val_samples]
-    combined_labels = train_labels + [s["label"] for s in val_samples]
-
     # Candidate models
     pipelines = get_candidate_pipelines(random_seed=args.seed)
 
     # 5-Fold Cross Validation
-    logger.info("Running 5-Fold Stratified Cross-Validation on combined Train+Val...")
-    cv_results = run_cross_validation(pipelines, combined_texts, combined_labels, random_seed=args.seed)
+    logger.info("Running 5-Fold Stratified Cross-Validation on training data only...")
+    cv_results = run_cross_validation(pipelines, train_texts, train_labels, random_seed=args.seed)
 
     for model_name, res in cv_results.items():
         logger.info("CV [%s] -> Macro F1: %.4f (+/- %.4f), Acc: %.4f",
@@ -250,27 +260,22 @@ def main() -> None:
         logger.info("Validation Split [%s] -> Macro F1: %.4f, Acc: %.4f", name, macro_f1, acc)
 
     # Select best model: prioritize CV Macro F1, with tie-break preference for Logistic Regression
-    ranked_models = sorted(
-        pipelines.keys(),
-        key=lambda k: (
-            cv_results[k]["cv_macro_f1_mean"],
-            val_evals[k]["val_macro_f1"],
-            1 if k == "Logistic Regression" else 0,
-        ),
-        reverse=True,
+    top_score = max(item["cv_macro_f1_mean"] for item in cv_results.values())
+    near_tied = [name for name, item in cv_results.items() if top_score - item["cv_macro_f1_mean"] < 0.01]
+    best_model_name = "Logistic Regression" if "Logistic Regression" in near_tied else max(
+        near_tied, key=lambda name: cv_results[name]["cv_macro_f1_mean"]
     )
-    best_model_name = ranked_models[0]
     best_macro_f1 = val_evals[best_model_name]["val_macro_f1"]
 
     logger.info("Selected Best Model: %s (CV Macro F1: %.4f, Val Macro F1: %.4f)",
                 best_model_name, cv_results[best_model_name]["cv_macro_f1_mean"], best_macro_f1)
 
-    # Train winning model on combined train+val for deployment artifact
+    # Keep validation/OOD untouched so the deployed threshold remains honestly calibrated.
     best_pipeline = pipelines[best_model_name]
-    best_pipeline.fit(combined_texts, combined_labels)
+    best_pipeline.fit(train_texts, train_labels)
 
     # Calibrate Unknown threshold on validation data
-    calibrated_thresh, thresh_stats = calibrate_unknown_threshold(best_pipeline, val_samples)
+    calibrated_thresh, thresh_stats = calibrate_unknown_threshold(best_pipeline, val_samples, ood_val_samples)
     logger.info("Calibrated Unknown Threshold: %.2f", calibrated_thresh)
 
     # Serialize model artifact
@@ -285,14 +290,19 @@ def main() -> None:
     metadata = {
         "modelType": best_model_name,
         "pipeline": "TfidfVectorizer(ngram_range=(1,2), sublinear_tf=True, min_df=2) + LogisticRegression(class_weight='balanced')",
-        "datasetVersion": "1.0.0",
+        "datasetVersion": "2.0.0-controlled-synthetic",
+        "pythonVersion": platform.python_version(),
+        "scikitLearnVersion": sklearn.__version__,
+        "joblibVersion": joblib.__version__,
+        "artifactSha256": hashlib.sha256(model_artifact_path.read_bytes()).hexdigest(),
         "trainedAt": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "labels": classes,
         "randomSeed": args.seed,
         "sampleCounts": {
             "train": len(train_samples),
             "validation": len(val_samples),
-            "totalTrained": len(combined_texts),
+            "oodValidation": len(ood_val_samples),
+            "totalTrained": len(train_texts),
         },
         "cvResults": cv_results,
         "baselineComparison": {

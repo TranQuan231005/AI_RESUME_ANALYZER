@@ -101,6 +101,7 @@ def test_resume_analysis_result_fixtures():
         assert "resumeScore" in dumped
         assert "scoreBreakdown" in dumped
         assert "recommendedSkills" in dumped
+        assert "topTerms" in dumped["fieldEvidence"][0]
         assert "usedFallback" in dumped["ai"]
 
 
@@ -121,6 +122,8 @@ def test_match_result_fixtures():
         assert "matchedSkills" in dumped
         assert "missingSkills" in dumped
         assert "atsKeywords" in dumped
+        assert "matchBreakdown" in dumped
+        assert obj.match_breakdown.skill_weight + obj.match_breakdown.semantic_weight == 1.0
 
 
 def test_api_error_fixtures():

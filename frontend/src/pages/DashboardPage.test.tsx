@@ -232,6 +232,14 @@ describe('DashboardPage', () => {
       strengths: [],
       weaknesses: [],
       recommendations: [],
+      matchBreakdown: {
+        method: 'HYBRID_EMBEDDING' as const,
+        skillScore: 80,
+        semanticScore: 90,
+        skillWeight: 0.5,
+        semanticWeight: 0.5,
+        embeddingModel: 'sentence-transformers/all-MiniLM-L6-v2',
+      },
       ai: {
         provider: 'RULE_BASED' as const,
         model: 'deterministic-v1',
@@ -289,6 +297,14 @@ describe('DashboardPage', () => {
       strengths: [],
       weaknesses: [],
       recommendations: [],
+      matchBreakdown: {
+        method: 'HYBRID_EMBEDDING' as const,
+        skillScore: 90,
+        semanticScore: 90,
+        skillWeight: 0.5,
+        semanticWeight: 0.5,
+        embeddingModel: 'sentence-transformers/all-MiniLM-L6-v2',
+      },
       ai: {
         provider: 'RULE_BASED' as const,
         model: 'deterministic-v1',

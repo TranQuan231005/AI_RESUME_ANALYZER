@@ -7,12 +7,14 @@
     {
       "field": "Data Science",
       "matchedSkills": ["Python", "scikit-learn", "SQL"],
-      "confidence": 1.0
+      "confidence": 1.0,
+      "topTerms": []
     },
     {
       "field": "Web Development",
       "matchedSkills": ["SQL"],
-      "confidence": 0.33
+      "confidence": 0.33,
+      "topTerms": []
     }
   ]
 }

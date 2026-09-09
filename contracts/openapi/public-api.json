@@ -750,6 +750,10 @@
             "type": "number",
             "minimum": 0.0,
             "maximum": 1.0
+          },
+          "topTerms": {
+            "type": "array",
+            "items": { "type": "string" }
           }
         }
       },
@@ -842,6 +846,7 @@
           "strengths",
           "weaknesses",
           "recommendations",
+          "matchBreakdown",
           "ai"
         ],
         "properties": {
@@ -855,7 +860,20 @@
           "strengths": { "type": "array", "items": { "type": "string" } },
           "weaknesses": { "type": "array", "items": { "type": "string" } },
           "recommendations": { "type": "array", "items": { "type": "string" } },
+          "matchBreakdown": { "$ref": "#/components/schemas/MatchBreakdown" },
           "ai": { "$ref": "#/components/schemas/AiMetadata" }
+        }
+      },
+      "MatchBreakdown": {
+        "type": "object",
+        "required": ["method", "skillScore", "semanticScore", "skillWeight", "semanticWeight", "embeddingModel"],
+        "properties": {
+          "method": { "type": "string", "enum": ["HYBRID_EMBEDDING", "SKILL_ONLY"] },
+          "skillScore": { "type": "integer", "minimum": 0, "maximum": 100 },
+          "semanticScore": { "type": "integer", "minimum": 0, "maximum": 100, "nullable": true },
+          "skillWeight": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+          "semanticWeight": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+          "embeddingModel": { "type": "string", "nullable": true }
         }
       },
       "PersistedResumeAnalysisResponse": {

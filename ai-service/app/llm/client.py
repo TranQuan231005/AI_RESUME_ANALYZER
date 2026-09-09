@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 import time
 from dataclasses import dataclass
@@ -8,6 +9,8 @@ from enum import Enum
 from typing import Any, Dict, Optional
 
 import requests
+
+logger = logging.getLogger('uvicorn.error')
 
 
 class OllamaErrorCode(str, Enum):
@@ -29,11 +32,12 @@ class OllamaClientError(RuntimeError):
 @dataclass(frozen=True)
 class OllamaConfig:
     base_url: str = "http://localhost:11434"
-    model: str = "qwen3:4b"
+    model: str = "qwen3:0.6b"
     timeout_seconds: float = 60.0
     temperature: float = 0.1
     malformed_json_retries: int = 1
     keep_alive: int = -1
+    warmup_timeout_seconds: float = 60.0
 
     def __post_init__(self) -> None:
         normalized_url = self.base_url.strip().rstrip("/")
@@ -44,6 +48,8 @@ class OllamaConfig:
             raise ValueError("OLLAMA_MODEL must not be empty")
         if self.timeout_seconds <= 0:
             raise ValueError("AI_TIMEOUT_SECONDS must be greater than zero")
+        if self.warmup_timeout_seconds <= 0:
+            raise ValueError("OLLAMA_WARMUP_TIMEOUT_SECONDS must be greater than zero")
         if self.malformed_json_retries < 0:
             raise ValueError("malformed_json_retries must not be negative")
         object.__setattr__(self, "base_url", normalized_url)
@@ -65,9 +71,10 @@ class OllamaConfig:
 
         return cls(
             base_url=os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"),
-            model=os.getenv("OLLAMA_MODEL", "qwen3:4b"),
+            model=os.getenv("OLLAMA_MODEL", "qwen3:0.6b"),
             timeout_seconds=timeout_seconds,
             keep_alive=keep_alive,
+            warmup_timeout_seconds=float(os.getenv('OLLAMA_WARMUP_TIMEOUT_SECONDS', '60')),
         )
 
     @property
@@ -88,14 +95,17 @@ class OllamaClient:
 
     def warmup(self) -> bool:
         """Preload the model into memory with keep_alive to eliminate cold-start latency."""
+        started = time.monotonic()
         try:
             res = self._session.post(
                 self.config.generate_url,
-                json={"model": self.config.model, "keep_alive": self.config.keep_alive},
-                timeout=15.0,
+                json={"model": self.config.model, "keep_alive": self.config.keep_alive, "stream": False, "think": False},
+                timeout=self.config.warmup_timeout_seconds,
             )
+            logger.info('ollama_warmup status=%d elapsed_ms=%d', res.status_code, int((time.monotonic() - started) * 1000))
             return res.status_code == 200
         except Exception:
+            logger.warning('ollama_warmup failed elapsed_ms=%d', int((time.monotonic() - started) * 1000))
             return False
 
     def generate_json(self, system_prompt: str, user_prompt: str) -> Dict[str, Any]:
@@ -105,6 +115,7 @@ class OllamaClient:
             "prompt": user_prompt,
             "stream": False,
             "format": "json",
+            "think": False,
             "keep_alive": self.config.keep_alive,
             "options": {"temperature": self.config.temperature},
         }
@@ -169,6 +180,13 @@ class OllamaClient:
                 OllamaErrorCode.MALFORMED_JSON,
                 "Ollama response envelope must be a JSON object",
             )
+
+        # Allowlist numeric metrics only: never log prompts, output or error bodies.
+        metrics = {key: value for key in (
+            'total_duration', 'load_duration', 'prompt_eval_duration',
+            'eval_duration', 'prompt_eval_count', 'eval_count',
+        ) if type(value := envelope.get(key)) in (int, float)}
+        logger.info('ollama_generation metrics=%s', metrics)
 
         generated_text = envelope.get("response")
         if not isinstance(generated_text, str) or not generated_text.strip():

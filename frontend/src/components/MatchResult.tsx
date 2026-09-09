@@ -37,6 +37,7 @@ export const MatchResult: React.FC<MatchResultProps> = ({
     strengths,
     weaknesses,
     recommendations,
+    matchBreakdown,
     ai,
   } = result;
 
@@ -62,6 +63,14 @@ export const MatchResult: React.FC<MatchResultProps> = ({
       </header>
 
       <ScoreSummary score={matchScore} label="Match Score" hint="A comparison of resume evidence, required skills, and ATS language." />
+
+      <section className={styles.breakdown} data-testid="match-breakdown" aria-labelledby="match-breakdown-heading">
+        <h3 className={styles.sectionTitle} id="match-breakdown-heading">Match breakdown</h3>
+        <div className={styles.metric}><span>Method: </span><strong>{matchBreakdown.method}</strong></div>
+        <div className={styles.metric}><span>Skill score: </span><strong>{matchBreakdown.skillScore}/100 ({Math.round(matchBreakdown.skillWeight * 100)}%)</strong></div>
+        <div className={styles.metric}><span>Semantic score: </span><strong>{matchBreakdown.semanticScore === null ? 'Unavailable' : `${matchBreakdown.semanticScore}/100 (${Math.round(matchBreakdown.semanticWeight * 100)}%)`}</strong></div>
+        <div className={styles.metric}><span>Matching model: </span><strong>{matchBreakdown.embeddingModel ?? 'Skill taxonomy only'}</strong></div>
+      </section>
 
       <div className={styles.contentGrid}>
       <section className={styles.contentSection} data-testid="matched-skills">

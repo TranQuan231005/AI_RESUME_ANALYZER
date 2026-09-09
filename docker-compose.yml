@@ -27,8 +27,13 @@ services:
     environment:
       PORT: 8000
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
-      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen3:4b}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen3:0.6b}
       AI_TIMEOUT_SECONDS: ${AI_TIMEOUT_SECONDS:-60}
+      OLLAMA_KEEP_ALIVE: ${OLLAMA_KEEP_ALIVE:--1}
+      OLLAMA_WARMUP_TIMEOUT_SECONDS: ${OLLAMA_WARMUP_TIMEOUT_SECONDS:-60}
+      CLASSIFIER_ARTIFACT_DIR: /app/models/classifier
+      MATCHING_CONFIG_PATH: /app/models/matching/metadata.json
+      EMBEDDING_MODEL_PATH: /opt/models/all-MiniLM-L6-v2
     ports:
       - "8000:8000"
     extra_hosts:
@@ -36,8 +41,8 @@ services:
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 10s
-      timeout: 5s
-      retries: 5
+      timeout: 30s
+      retries: 10
 
   backend:
     build:

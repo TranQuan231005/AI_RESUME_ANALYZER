@@ -1,10 +1,18 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import json
+import logging
+import os
+from pathlib import Path
 from typing import Iterable
 
 from app.extraction.taxonomy import canonicalize_skill, find_skills
-from app.schemas import AiMetadata, AiProvider, MatchResult
+from app.matching.embedding import EMBEDDING_MODEL_ID, compute_embedding_similarity
+from app.schemas import AiMetadata, AiProvider, MatchBreakdown, MatchResult
+
+logger = logging.getLogger(__name__)
+LOCAL_MATCHING_CONFIG = Path(__file__).resolve().parents[2] / "models" / "matching" / "metadata.json"
 
 
 @dataclass(frozen=True)
@@ -84,22 +92,19 @@ def _target_role(job_description: str, requested_role: str | None) -> str:
     return "Unspecified Role"
 
 
-def compute_lexical_similarity(resume_text: str, job_description: str) -> float:
-    """Compute sublinear TF-IDF cosine similarity between resume and job description."""
-    if not isinstance(resume_text, str) or not isinstance(job_description, str):
-        return 0.0
-    if not resume_text.strip() or not job_description.strip():
-        return 0.0
+def load_matching_config(config_path: Path | str | None = None) -> dict[str, object]:
+    path = Path(config_path or os.getenv("MATCHING_CONFIG_PATH", str(LOCAL_MATCHING_CONFIG)))
     try:
-        from sklearn.feature_extraction.text import TfidfVectorizer
-        from sklearn.metrics.pairwise import cosine_similarity
-
-        vec = TfidfVectorizer(lowercase=True, stop_words="english", ngram_range=(1, 2), sublinear_tf=True)
-        matrix = vec.fit_transform([resume_text, job_description])
-        sim = float(cosine_similarity(matrix[0:1], matrix[1:2])[0][0])
-        return round(max(0.0, min(100.0, sim * 100.0)), 2)
-    except Exception:
-        return 0.0
+        with path.open(encoding="utf-8") as stream:
+            config = json.load(stream)
+        skill_weight = float(config["skillWeight"])
+        semantic_weight = float(config["semanticWeight"])
+        if not 0.0 <= skill_weight <= 1.0 or abs(skill_weight + semantic_weight - 1.0) > 1e-6:
+            raise ValueError("matching weights must be in [0, 1] and sum to 1")
+        return config
+    except Exception as exc:
+        logger.error("Matching metadata is invalid at %s: %s", path, exc)
+        raise RuntimeError("Matching metadata is unavailable or invalid") from exc
 
 
 def match_resume_to_job(
@@ -111,9 +116,10 @@ def match_resume_to_job(
     resume_text: str | None = None,
     target_role: str | None = None,
     processing_ms: int = 0,
-    alpha: float = 0.80,
+    config_path: Path | str | None = None,
+    embedding_model: object | None = None,
 ) -> MatchResult:
-    """Build a contract-compatible hybrid MatchResult from skill evidence and semantic alignment."""
+    """Run the production skill/embedding matcher using versioned metadata."""
     jd_skills = extract_jd_skills(job_description)
     evidence = match_skills(resume_skills, jd_skills)
     
@@ -132,26 +138,32 @@ def match_resume_to_job(
             "Provide a more specific job description with recognizable technical skills."
         )
 
-    # If resume_text is supplied, compute calibrated hybrid score
-    if resume_text and resume_text.strip():
-        lexical_score = compute_lexical_similarity(resume_text, job_description)
-        if len(jd_skills) == 0:
-            final_score = round(lexical_score)
-        else:
-            # Check for keyword stuffing: high raw skill count but low semantic cohesion
-            normalized_skills = list(normalize_skills(resume_skills))
-            is_stuffing = len(normalized_skills) >= 10 and lexical_score < 25.0
-            if is_stuffing:
-                raw_hybrid = (alpha * evidence.match_score) + ((1.0 - alpha) * lexical_score)
-                final_score = round(raw_hybrid * 0.4)
-                weaknesses.append("High volume of disjoint skills detected without relevant project context.")
-            else:
-                raw_hybrid = (alpha * evidence.match_score) + ((1.0 - alpha) * lexical_score)
-                final_score = round(min(100.0, max(0.0, raw_hybrid)))
-        model_name = "hybrid-lexical-semantic-v1"
-    else:
+    config = load_matching_config(config_path)
+    semantic_score = compute_embedding_similarity(
+        resume_text or "", job_description, model=embedding_model
+    )
+    if semantic_score is None:
         final_score = evidence.match_score
-        model_name = "deterministic-v1"
+        breakdown = MatchBreakdown(
+            method="SKILL_ONLY",
+            skillScore=evidence.match_score,
+            semanticScore=None,
+            skillWeight=1.0,
+            semanticWeight=0.0,
+            embeddingModel=None,
+        )
+    else:
+        skill_weight = 0.0 if not jd_skills else float(config["skillWeight"])
+        semantic_weight = 1.0 if not jd_skills else float(config["semanticWeight"])
+        final_score = round(max(0.0, min(100.0, skill_weight * evidence.match_score + semantic_weight * semantic_score)))
+        breakdown = MatchBreakdown(
+            method="HYBRID_EMBEDDING",
+            skillScore=evidence.match_score,
+            semanticScore=round(semantic_score),
+            skillWeight=skill_weight,
+            semanticWeight=semantic_weight,
+            embeddingModel=str(config.get("embeddingModel", EMBEDDING_MODEL_ID)),
+        )
 
     return MatchResult(
         fileName=file_name,
@@ -164,9 +176,10 @@ def match_resume_to_job(
         strengths=strengths[:6],
         weaknesses=weaknesses[:6],
         recommendations=recommendations[:8],
+        matchBreakdown=breakdown,
         ai=AiMetadata(
             provider=AiProvider.RULE_BASED,
-            model=model_name,
+            model="deterministic-v1",
             usedFallback=True,
             processingMs=max(0, processing_ms),
         ),

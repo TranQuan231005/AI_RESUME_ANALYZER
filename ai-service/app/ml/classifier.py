@@ -65,90 +65,103 @@ class MLClassificationEngine:
     def __init__(self, artifact_dir: Path | str | None = None):
         self.artifact_dir = artifact_dir
 
+    def _fallback_prediction(
+        self,
+        text: str,
+        raw_features: ResumeFeatures | None,
+    ) -> MLPredictionResult:
+        """Return deterministic taxonomy evidence when ML inference is unavailable."""
+        if raw_features is None:
+            raw_features = extract_features(text)
+        fallback_res = fallback_classify_features(raw_features)
+        evidence = [
+            {**item, "topTerms": list(item.get("topTerms", []))}
+            for item in (fallback_res.field_evidence or [])
+        ]
+        confidence = next(
+            (
+                float(item.get("confidence", 0.0))
+                for item in evidence
+                if item.get("field") == fallback_res.predicted_field
+            ),
+            0.0,
+        )
+        probabilities = {
+            item.get("field", ""): float(item.get("confidence", 0.0))
+            for item in evidence
+            if item.get("field")
+        }
+        return MLPredictionResult(
+            predicted_field=fallback_res.predicted_field,
+            confidence=confidence,
+            per_class_probabilities=probabilities,
+            top_terms=[],
+            field_evidence=evidence,
+            used_model=False,
+        )
+
     def predict(self, text: str, raw_features: ResumeFeatures | None = None) -> MLPredictionResult:
         pipeline = load_classifier_model(self.artifact_dir)
         metadata = get_model_metadata(self.artifact_dir) or {}
 
         if pipeline is None or not hasattr(pipeline, "predict_proba"):
-            # Fallback to taxonomy keyword heuristic
+            return self._fallback_prediction(text, raw_features)
+
+        try:
+            classes = list(pipeline.classes_)
+            probabilities = pipeline.predict_proba([text])[0]
+            prob_dict = {classes[i]: round(float(probabilities[i]), 4) for i in range(len(classes))}
+
+            best_idx = int(probabilities.argmax())
+            best_class = classes[best_idx]
+            best_confidence = float(probabilities[best_idx])
+            unknown_threshold = float(metadata.get("unknownThreshold", 0.35))
+            if best_confidence < unknown_threshold:
+                predicted_field = "Unknown"
+            elif str(best_class) in FIELD_NAMES:
+                predicted_field = str(best_class)
+            else:
+                predicted_field = "Unknown"
+
+            top_terms = extract_top_terms(pipeline, text, best_idx, top_n=5)
             if raw_features is None:
                 raw_features = extract_features(text)
-            fallback_res = fallback_classify_features(raw_features)
-            
-            evidence = fallback_res.field_evidence or []
-            conf = 0.0
-            for ev in evidence:
-                if ev.get("field") == fallback_res.predicted_field:
-                    conf = float(ev.get("confidence", 0.0))
-                    break
 
-            probs = {ev.get("field", ""): float(ev.get("confidence", 0.0)) for ev in evidence if ev.get("field")}
+            from app.extraction.taxonomy import SKILL_TAXONOMY
+
+            evidence_skills: dict[str, list[str]] = {c: [] for c in classes}
+            for skill_name in raw_features.skills:
+                definition = next(
+                    (item for item in SKILL_TAXONOMY if item.canonical_name == skill_name),
+                    None,
+                )
+                if definition is None:
+                    continue
+                for field_name in definition.fields:
+                    if field_name in evidence_skills:
+                        evidence_skills[field_name].append(skill_name)
+
+            evidence_list = []
+            for cls in sorted(classes, key=lambda c: prob_dict[c], reverse=True):
+                if prob_dict[cls] >= 0.05:
+                    evidence_list.append({
+                        "field": cls,
+                        "matchedSkills": evidence_skills.get(cls, []),
+                        "confidence": round(prob_dict[cls], 2),
+                        "topTerms": extract_top_terms(pipeline, text, classes.index(cls), top_n=3),
+                    })
+
             return MLPredictionResult(
-                predicted_field=fallback_res.predicted_field,
-                confidence=conf,
-                per_class_probabilities=probs,
-                top_terms=[],
-                field_evidence=evidence,
-                used_model=False,
+                predicted_field=predicted_field,
+                confidence=round(best_confidence, 4),
+                per_class_probabilities=prob_dict,
+                top_terms=top_terms,
+                field_evidence=evidence_list,
+                used_model=True,
             )
-
-        classes = list(pipeline.classes_)
-        probabilities = pipeline.predict_proba([text])[0]
-        prob_dict = {classes[i]: round(float(probabilities[i]), 4) for i in range(len(classes))}
-
-        # Determine top prediction
-        best_idx = int(probabilities.argmax())
-        best_class = classes[best_idx]
-        best_confidence = float(probabilities[best_idx])
-
-        # Apply unknown threshold
-        unknown_threshold = float(metadata.get("unknownThreshold", 0.35))
-        if best_confidence < unknown_threshold:
-            predicted_field = "Unknown"
-        elif str(best_class) in FIELD_NAMES:
-            predicted_field = str(best_class)
-        else:
-            predicted_field = "Unknown"
-
-        top_terms = extract_top_terms(pipeline, text, best_idx, top_n=5)
-
-        # Build field evidence structure compatible with existing API contract
-        if raw_features is None:
-            raw_features = extract_features(text)
-
-        # Extract skills matched per field
-        from app.extraction.taxonomy import SKILL_TAXONOMY
-        evidence_skills: dict[str, list[str]] = {c: [] for c in classes}
-        for skill_name in raw_features.skills:
-            definition = next(
-                (item for item in SKILL_TAXONOMY if item.canonical_name == skill_name),
-                None,
-            )
-            if definition is None:
-                continue
-            for field_name in definition.fields:
-                if field_name in evidence_skills:
-                    evidence_skills[field_name].append(skill_name)
-
-        # Build evidence list sorted by probability
-        evidence_list = []
-        for cls in sorted(classes, key=lambda c: prob_dict[c], reverse=True):
-            if prob_dict[cls] >= 0.05:  # show classes with >= 5% confidence
-                evidence_list.append({
-                    "field": cls,
-                    "matchedSkills": evidence_skills.get(cls, []),
-                    "confidence": round(prob_dict[cls], 2),
-                    "topTerms": extract_top_terms(pipeline, text, classes.index(cls), top_n=3),
-                })
-
-        return MLPredictionResult(
-            predicted_field=predicted_field,
-            confidence=round(best_confidence, 4),
-            per_class_probabilities=prob_dict,
-            top_terms=top_terms,
-            field_evidence=evidence_list,
-            used_model=True,
-        )
+        except Exception as exc:
+            logger.warning("ML classifier inference failed; using taxonomy fallback: %s", exc)
+            return self._fallback_prediction(text, raw_features)
 
 
 def predict_field_from_text(text: str, raw_features: ResumeFeatures | None = None, artifact_dir: Path | str | None = None) -> MLPredictionResult:

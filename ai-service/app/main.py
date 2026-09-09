@@ -4,16 +4,19 @@
 from __future__ import annotations
 
 import time
+import logging
 from typing import Annotated, Optional
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from starlette.concurrency import run_in_threadpool
 
 from app.document.parser import extract_pdf_content
-from app.extraction.classifier import classify_features
 from app.extraction.features import extract_features
 from app.extraction.router import router as extraction_router
 from app.ml.classifier import classify_resume_features_ml
-from app.llm.client import OllamaClient
+from app.ml.model_loader import get_model_metadata, load_classifier_model
+from app.matching.embedding import EMBEDDING_MODEL_ID, load_embedding_model
+from app.llm.client import OllamaClient, OllamaClientError
 from app.llm.prompts import (
     build_jd_matching_prompt,
     build_resume_recommendation_prompt,
@@ -47,6 +50,21 @@ import threading
 app.include_router(extraction_router, prefix="/api")
 
 _ollama_client: Optional[OllamaClient] = None
+logger = logging.getLogger('uvicorn.error')
+
+
+def _log_enrichment_failure(operation: str, error: Exception) -> None:
+    # Exception messages can contain document text or remote response bodies.
+    code = error.code.value if isinstance(error, OllamaClientError) else 'INTERNAL_ERROR'
+    logger.warning('ollama_fallback operation=%s code=%s', operation, code)
+
+
+def _timed_call(stage, function, *args, **kwargs):
+    started = time.monotonic()
+    try:
+        return function(*args, **kwargs)
+    finally:
+        logger.info('ai_stage stage=%s elapsed_ms=%d', stage, int((time.monotonic() - started) * 1000))
 
 
 def get_ollama_client() -> OllamaClient:
@@ -68,8 +86,8 @@ def startup_warmup() -> None:
         try:
             client = get_ollama_client()
             client.warmup()
-        except Exception:
-            pass
+        except Exception as error:
+            _log_enrichment_failure('warmup', error)
 
     threading.Thread(target=_do_warmup, daemon=True).start()
 
@@ -80,7 +98,7 @@ def startup_warmup() -> None:
     summary="Health check",
     tags=["Health"],
 )
-async def health_check() -> HealthResponse:
+def health_check() -> HealthResponse:
     client = get_ollama_client()
     ollama_reachable = False
     try:
@@ -89,10 +107,17 @@ async def health_check() -> HealthResponse:
     except Exception:
         ollama_reachable = False
 
+    classifier_loaded = load_classifier_model() is not None
+    embedding_loaded = load_embedding_model() is not None
+
     return HealthResponse(
         status="healthy",
         model=client.config.model,
         ollama_reachable=ollama_reachable,
+        classifierLoaded=classifier_loaded,
+        classifierModel=(get_model_metadata() or {}).get("modelType") if classifier_loaded else None,
+        embeddingModelLoaded=embedding_loaded,
+        embeddingModel=EMBEDDING_MODEL_ID if embedding_loaded else None,
     )
 
 
@@ -117,8 +142,8 @@ def _enrich_resume_with_llm(
             rule_fallback=rule_recs,
         )
         return final_skills, final_recs, False, client.config.model
-    except Exception:
-        pass
+    except Exception as error:
+        _log_enrichment_failure('resume', error)
 
     return (
         rule_recs.get("recommendedSkills", [])[:8],
@@ -151,8 +176,8 @@ def _enrich_match_with_llm(
             rule_match=rule_match,
         )
         return ats, strengths, weaknesses, recs, False, client.config.model
-    except Exception:
-        pass
+    except Exception as error:
+        _log_enrichment_failure('match', error)
 
     return (
         list(rule_match.ats_keywords)[:15],
@@ -181,17 +206,18 @@ async def analyze_resume(
     await validate_pdf_file(file)
 
     file_bytes = await file.read()
-    parsed_doc = extract_pdf_content(file_bytes, file.filename or "resume.pdf")
+    parsed_doc = await run_in_threadpool(_timed_call, 'resume_parse', extract_pdf_content, file_bytes, file.filename or "resume.pdf")
 
     # 1. Feature extraction & field classification
-    raw_features = extract_features(parsed_doc.text)
-    classified_features = classify_resume_features_ml(parsed_doc.text, raw_features)
+    raw_features = await run_in_threadpool(_timed_call, 'feature_extraction', extract_features, parsed_doc.text)
+    classified_features = await run_in_threadpool(_timed_call, 'classification', classify_resume_features_ml, parsed_doc.text, raw_features)
 
     field_evidence = [
         SchemaFieldEvidence(
             field=FieldEnum(ev["field"]) if ev["field"] in [f.value for f in FieldEnum] else FieldEnum.UNKNOWN,
             matchedSkills=ev.get("matchedSkills", []),
             confidence=float(ev.get("confidence", 0.0)),
+            topTerms=ev.get("topTerms", []),
         )
         for ev in (classified_features.field_evidence or [])
     ]
@@ -220,7 +246,8 @@ async def analyze_resume(
 
     # 3. Hybrid LLM enrichment & fallback
     client = get_ollama_client()
-    rec_skills, rec_texts, used_fallback, model_name = _enrich_resume_with_llm(
+    rec_skills, rec_texts, used_fallback, model_name = await run_in_threadpool(
+        _timed_call, 'resume_enrichment', _enrich_resume_with_llm,
         client=client,
         resume_text=parsed_doc.text,
         features=schema_features,
@@ -288,7 +315,7 @@ async def analyze_match(
     if jdFile is not None and jdFile.filename:
         await validate_pdf_file(jdFile)
         jd_bytes = await jdFile.read()
-        parsed_jd = extract_pdf_content(jd_bytes, jdFile.filename)
+        parsed_jd = await run_in_threadpool(_timed_call, 'jd_parse', extract_pdf_content, jd_bytes, jdFile.filename)
         jd_text = parsed_jd.text.strip() if parsed_jd.text else ""
         jd_file_name = jdFile.filename
     elif jobDescription and jobDescription.strip():
@@ -306,11 +333,11 @@ async def analyze_match(
         )
 
     file_bytes = await file.read()
-    parsed_doc = extract_pdf_content(file_bytes, file.filename or "resume.pdf")
+    parsed_doc = await run_in_threadpool(_timed_call, 'resume_parse', extract_pdf_content, file_bytes, file.filename or "resume.pdf")
 
     # 1. Feature extraction
-    raw_features = extract_features(parsed_doc.text)
-    classified_features = classify_resume_features_ml(parsed_doc.text, raw_features)
+    raw_features = await run_in_threadpool(_timed_call, 'feature_extraction', extract_features, parsed_doc.text)
+    classified_features = await run_in_threadpool(_timed_call, 'classification', classify_resume_features_ml, parsed_doc.text, raw_features)
 
     predicted_enum = (
         FieldEnum(classified_features.predicted_field)
@@ -327,7 +354,8 @@ async def analyze_match(
     )
 
     # 2. Deterministic & Hybrid matching
-    rule_match = match_resume_to_job(
+    rule_match = await run_in_threadpool(
+        _timed_call, 'matching', match_resume_to_job,
         file_name=parsed_doc.fileName,
         jd_file_name=jd_file_name,
         resume_skills=schema_features.skills,
@@ -338,7 +366,8 @@ async def analyze_match(
 
     # 3. Hybrid LLM enrichment & fallback
     client = get_ollama_client()
-    ats_keywords, strengths, weaknesses, recommendations, used_fallback, model_name = _enrich_match_with_llm(
+    ats_keywords, strengths, weaknesses, recommendations, used_fallback, model_name = await run_in_threadpool(
+        _timed_call, 'match_enrichment', _enrich_match_with_llm,
         client=client,
         resume_text=parsed_doc.text,
         features=schema_features,
@@ -360,6 +389,7 @@ async def analyze_match(
         strengths=strengths,
         weaknesses=weaknesses,
         recommendations=recommendations,
+        matchBreakdown=rule_match.match_breakdown,
         ai=AiMetadata(
             provider=AiProvider.RULE_BASED if used_fallback else AiProvider.OLLAMA,
             model=model_name,

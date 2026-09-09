@@ -1,0 +1,18 @@
+# Existing local stack: docker compose -p ai-resume-online -f docker-compose.yml -f docker-compose.local.yml up --build -d
+# Model selection is inherited from docker-compose.yml / OLLAMA_MODEL.
+services:
+  mysql:
+    ports: !override
+      - "13306:3306"
+  ai-service:
+    image: ai-resume-analyzer-ai:local
+    ports: !override
+      - "18000:8000"
+  backend:
+    image: ai_resume_analyzer-backend:latest
+    ports: !override
+      - "18080:8080"
+  frontend:
+    image: ai_resume_analyzer-frontend:latest
+    ports: !override
+      - "15173:5173"

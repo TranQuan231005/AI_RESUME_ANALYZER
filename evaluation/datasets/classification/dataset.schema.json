@@ -1,0 +1,60 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ResumeClassificationSample",
+  "type": "object",
+  "required": [
+    "id",
+    "text",
+    "label",
+    "sourceType",
+    "sourceReference",
+    "templateGroup",
+    "reviewed"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9_-]+$",
+      "description": "Unique sample identifier"
+    },
+    "text": {
+      "type": "string",
+      "minLength": 50,
+      "description": "Anonymized English resume text content"
+    },
+    "label": {
+      "type": "string",
+      "enum": [
+        "Data Science",
+        "Web Development",
+        "Android Development",
+        "iOS Development",
+        "UI/UX",
+        "Unknown"
+      ],
+      "description": "Ground truth domain category"
+    },
+    "sourceType": {
+      "type": "string",
+      "enum": [
+        "licensed-public",
+        "manually-authored",
+        "synthetic"
+      ],
+      "description": "Provenance origin type of the resume text"
+    },
+    "sourceReference": {
+      "type": "string",
+      "description": "Citation, prompt seed, or template origin reference"
+    },
+    "templateGroup": {
+      "type": "string",
+      "description": "Identifier grouping template variants to prevent data leakage"
+    },
+    "reviewed": {
+      "type": "boolean",
+      "description": "Whether the label and anonymization have been verified"
+    }
+  },
+  "additionalProperties": false
+}

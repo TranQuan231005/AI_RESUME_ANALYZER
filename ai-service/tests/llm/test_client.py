@@ -90,7 +90,7 @@ def test_config_reads_environment_and_normalizes_url(monkeypatch: pytest.MonkeyP
 
 def test_valid_json_returns_object_and_sends_json_mode_payload() -> None:
     expected = {"recommendations": ["Add measurable impact"]}
-    response = {"model": "qwen3:4b", "response": json.dumps(expected), "done": True}
+    response = {"model": "qwen3:0.6b", "response": json.dumps(expected), "done": True}
 
     with mock_ollama_server([(200, response, 0)]) as (base_url, requests):
         result = make_client(base_url).generate_json("system rules", "resume data")
@@ -99,11 +99,12 @@ def test_valid_json_returns_object_and_sends_json_mode_payload() -> None:
     assert len(requests) == 1
     assert requests[0]["path"] == "/api/generate"
     assert requests[0]["body"] == {
-        "model": "qwen3:4b",
+        "model": "qwen3:0.6b",
         "system": "system rules",
         "prompt": "resume data",
         "stream": False,
         "format": "json",
+        "think": False,
         "keep_alive": -1,
         "options": {"temperature": 0.1},
     }
