@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useLayoutEffect, useRef, useState } from 'react';
 import { FileMagnifyingGlass, SignIn } from '@phosphor-icons/react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { ApiRequestError, authenticate } from '../api/auth';
@@ -13,6 +13,13 @@ export const LoginPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const locked = useRef(false);
+  const generation = useRef(0);
+  useLayoutEffect(() => {
+    locked.current = false;
+    setIsSubmitting(false);
+    return () => { generation.current += 1; };
+  }, [token]);
 
   if (token && user) {
     return <Navigate to={user.role === 'ADMIN' ? '/admin' : '/dashboard'} replace />;
@@ -20,16 +27,23 @@ export const LoginPage: React.FC = () => {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (locked.current) return;
+    locked.current = true;
+    const current = ++generation.current;
     setError(null);
     setIsSubmitting(true);
     try {
       const response = await authenticate(email, password);
+      if (current !== generation.current) return;
       login(response.accessToken, response.user);
       navigate(response.user.role === 'ADMIN' ? '/admin' : '/dashboard', { replace: true });
     } catch (caught) {
-      setError(caught instanceof ApiRequestError ? caught.message : 'Unable to sign in.');
+      if (current === generation.current) setError(caught instanceof ApiRequestError ? caught.message : 'Unable to sign in.');
     } finally {
-      setIsSubmitting(false);
+      if (current === generation.current) {
+        locked.current = false;
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -60,6 +74,7 @@ export const LoginPage: React.FC = () => {
                 name="email"
                 type="email"
                 autoComplete="email"
+                disabled={isSubmitting}
                 required
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
@@ -72,13 +87,14 @@ export const LoginPage: React.FC = () => {
                 name="password"
                 type="password"
                 autoComplete="current-password"
+                disabled={isSubmitting}
                 required
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
               />
             </div>
             {error && <Alert tone="error">{error}</Alert>}
-            <Button type="submit" disabled={isSubmitting} fullWidth icon={<SignIn size={19} weight="bold" aria-hidden="true" />}>
+            <Button type="submit" loading={isSubmitting} disabled={isSubmitting} fullWidth icon={<SignIn size={19} weight="bold" aria-hidden="true" />}>
               {isSubmitting ? 'Signing in…' : 'Sign in'}
             </Button>
           </form>

@@ -18,6 +18,10 @@
 .iconButton:active:not(:disabled) { transform: translateY(1px) scale(0.985); }
 .button:disabled,
 .iconButton:disabled { cursor: not-allowed; opacity: 0.48; }
+.button[aria-busy="true"] { opacity: 0.8; cursor: wait; }
+.spinner { flex-shrink: 0; animation: spin 850ms linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loadingLabel { color: var(--ink-soft); font-size: 0.85rem; line-height: 1.5; }
 .primary { background: var(--ink); color: var(--surface-strong); }
 .primary:hover:not(:disabled) { background: var(--accent); }
 .secondary { background: var(--surface-strong); border-color: var(--line); color: var(--ink); }
@@ -107,6 +111,9 @@
   cursor: pointer;
 }
 .segment:hover { color: var(--ink); }
+.segment { transition: background-color 160ms ease, color 160ms ease, transform 160ms ease; }
+.segment:active:not(:disabled) { transform: scale(0.98); }
+.segment:disabled { opacity: 0.55; cursor: not-allowed; }
 .segmentActive { background: var(--ink); color: var(--surface-strong); }
 .segmentActive:hover { color: var(--surface-strong); }
 
@@ -127,6 +134,8 @@
 .dropzone:hover,
 .dropzone:focus-within { border-color: var(--accent); background: #fffdf9; }
 .dropzoneSelected { border-style: solid; border-color: var(--ink); }
+.dropzoneDragging { border-color: var(--accent); border-style: solid; background: var(--accent-soft); }
+.fileReady { display: flex; align-items: center; gap: 0.35rem; margin-top: 0.45rem; color: var(--success); font-size: 0.75rem; }
 .dropzoneDisabled { cursor: not-allowed; opacity: 0.58; }
 .dropPrompt {
   width: 100%;
@@ -159,6 +168,7 @@
   align-items: center;
 }
 .fileName { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fileRow > span { min-width: 0; }
 
 .pageHeader { max-width: 780px; margin-bottom: 2rem; }
 .eyebrow {
@@ -240,6 +250,7 @@
 .scoreHint { margin: 0.65rem 0 0; color: #b9b7af; font-size: 0.82rem; }
 
 @media (max-width: 640px) {
+  .button { white-space: normal; line-height: 1.4; }
   .segments { width: 100%; border-radius: var(--radius); }
   .segment { flex: 1 0 auto; }
   .score { grid-template-columns: 1fr; }

@@ -1,5 +1,6 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import '@testing-library/jest-dom';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { AdminPage } from './AdminPage';
 import * as adminApi from '../api/admin';
 import * as authContext from '../context/AuthContext';
@@ -65,5 +66,16 @@ describe('AdminPage', () => {
       expect(screen.getByRole('region', { name: 'Registered users table' })).toBeTruthy();
       expect(screen.getByRole('region', { name: 'Recent analyses table' })).toBeTruthy();
     });
+  });
+
+  test('offers a retry after a failed load and shows empty tables after recovery', async () => {
+    jest.mocked(adminApi.getAdminMetrics).mockRejectedValueOnce(new Error('Service unavailable'));
+    jest.mocked(adminApi.getAdminUsers).mockResolvedValue({ items: [], page: 0, size: 10, totalItems: 0, totalPages: 0 });
+    jest.mocked(adminApi.getAdminAnalyses).mockResolvedValue({ items: [], page: 0, size: 10, totalItems: 0, totalPages: 0 });
+    render(<AdminPage />);
+    expect(await screen.findByRole('alert')).toHaveTextContent('Service unavailable');
+    fireEvent.click(screen.getByRole('button', { name: /try again/i }));
+    expect(await screen.findByText('No registered users.')).toBeInTheDocument();
+    expect(screen.getByText('No analyses yet.')).toBeInTheDocument();
   });
 });

@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom';
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { act, render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { DashboardPage } from './DashboardPage';
 import * as AuthContextModule from '../context/AuthContext';
@@ -348,5 +348,43 @@ describe('DashboardPage', () => {
         null
       );
     });
+  });
+
+  test('retries history errors without leaking them into the scoring form', async () => {
+    jest.mocked(analysisApi.getHistory).mockRejectedValueOnce(new Error('History unavailable'));
+    jest.mocked(analysisApi.getHistory).mockResolvedValueOnce({ items: [], page: 0, size: 10, totalItems: 0, totalPages: 0 });
+    renderDashboard();
+    fireEvent.click(screen.getByRole('button', { name: /analysis history/i }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('History unavailable');
+    fireEvent.click(screen.getByRole('button', { name: /try again/i }));
+    expect(await screen.findByText('No previous analyses found.')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /resume scoring/i }));
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  test('locks file removal and tab switching while scoring, without duplicate requests', () => {
+    jest.mocked(analysisApi.uploadResume).mockReturnValue(new Promise(() => {}));
+    renderDashboard();
+    const input = screen.getByLabelText(/upload resume \(pdf\)/i);
+    const file = new File(['pdf'], 'resume.pdf', { type: 'application/pdf' });
+    fireEvent.change(input, { target: { files: [file] } });
+    const form = screen.getByRole('button', { name: /upload resume/i }).closest('form')!;
+    fireEvent.submit(form);
+    fireEvent.submit(form);
+    expect(analysisApi.uploadResume).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('button', { name: /remove resume.pdf/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /^job match & ats$/i })).toBeDisabled();
+    fireEvent.keyDown(screen.getByRole('button', { name: /resume scoring/i }), { key: 'ArrowRight' });
+    expect(input).toBeInTheDocument();
+  });
+
+  test('ignores a late history failure after returning to the form', async () => {
+    let reject!: (error: Error) => void;
+    jest.mocked(analysisApi.getHistory).mockReturnValueOnce(new Promise((_, fail) => { reject = fail; }));
+    renderDashboard();
+    fireEvent.click(screen.getByRole('button', { name: /analysis history/i }));
+    fireEvent.click(screen.getByRole('button', { name: /resume scoring/i }));
+    await act(async () => reject(new Error('Late history error')));
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 });

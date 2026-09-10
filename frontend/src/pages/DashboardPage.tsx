@@ -9,6 +9,8 @@ import {
 } from '@phosphor-icons/react';
 import { useNavigate } from 'react-router-dom';
 import { getHistory, matchJobDescription, uploadResume } from '../api/analysis';
+import { MatchProgress } from '../components/MatchProgress';
+import { useAnalysisAction } from '../hooks/useAnalysisAction';
 import { Alert, Badge, Button, EmptyState, FileDropzone, LoadingSkeleton, PageHeader, SegmentedControl } from '../components/ui';
 import { useAuth } from '../context/AuthContext';
 import type { PagedAnalysisSummary } from '../types/analysis';
@@ -30,29 +32,35 @@ export const DashboardPage: React.FC = () => {
   const [targetRole, setTargetRole] = useState('');
   const [history, setHistory] = useState<PagedAnalysisSummary | null>(null);
   const [historyLoading, setHistoryLoading] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [historyError, setHistoryError] = useState<string | null>(null);
+  const [historyAttempt, setHistoryAttempt] = useState(0);
+  const [matchMinimized, setMatchMinimized] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { token, logout } = useAuth();
-
-  const loadHistory = async () => {
-    if (!token) return;
-    setHistoryLoading(true);
-    setError(null);
-    try {
-      setHistory(await getHistory(token, 0, 10));
-    } catch (err: any) {
-      setError(err?.message || 'Failed to load history.');
-    } finally {
-      setHistoryLoading(false);
-    }
-  };
+  const analysis = useAnalysisAction(token);
+  const isLoading = analysis.busy;
+  const unauthorized = () => { logout(); navigate('/login'); };
 
   useEffect(() => {
-    if (activeTab === 'history' && token) void loadHistory();
-  }, [activeTab, token]);
+    if (activeTab !== 'history' || !token) return;
+    let active = true;
+    setHistoryLoading(true);
+    setHistoryError(null);
+    setHistory(null);
+    void getHistory(token, 0, 10).then((response) => {
+      if (active) setHistory(response);
+    }).catch((caught) => {
+      if (active) setHistoryError(caught instanceof Error ? caught.message : 'Failed to load history.');
+    }).finally(() => {
+      if (active) setHistoryLoading(false);
+    });
+    return () => { active = false; };
+  }, [activeTab, token, historyAttempt]);
 
   const choosePdf = (file: File | null, setter: React.Dispatch<React.SetStateAction<File | null>>, message: string) => {
+    if (isLoading) return;
+    analysis.clearResumeError();
     if (file && !isPdf(file)) {
       setter(null);
       setError(message);
@@ -69,59 +77,42 @@ export const DashboardPage: React.FC = () => {
 
   const handleResumeSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (isLoading) return;
     if (!resumeFile) return setError('Please select a PDF file before submitting.');
     if (!token) return setError('Authentication token is missing. Please log in again.');
-    setIsLoading(true);
     setError(null);
-    try {
-      const response = await uploadResume(resumeFile, token);
+    await analysis.run('resume', () => uploadResume(resumeFile, token), (response) => {
       navigate('/resume/result', { state: { result: (response as any).result || response } });
-    } catch (err: any) {
-      if (err?.status === 401) {
-        logout();
-        navigate('/login');
-        return;
-      }
-      setError(err?.message || 'Failed to upload resume. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
+    }, unauthorized);
   };
 
   const isJdValid = jdInputMode === 'pdf' ? Boolean(jdFile) : jobDescription.trim().length >= 50;
 
-  const handleMatchSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
+  const handleMatchSubmit = async (event?: React.FormEvent) => {
+    event?.preventDefault();
+    if (isLoading) return;
     if (!matchFile) return setError('Please select a Candidate Resume PDF file before submitting.');
     if (jdInputMode === 'pdf' && !jdFile) return setError('Please select a Job Description PDF file.');
     if (jdInputMode === 'text' && jobDescription.trim().length < 50) return setError('Job description must be at least 50 characters.');
     if (!token) return setError('Authentication token is missing. Please log in again.');
-    setIsLoading(true);
     setError(null);
-    try {
-      const response = await matchJobDescription(
+    setMatchMinimized(false);
+    await analysis.run('match', () => matchJobDescription(
         matchFile,
         jdInputMode === 'text' ? jobDescription : undefined,
         targetRole.trim() || undefined,
         token,
         jdInputMode === 'pdf' ? jdFile : null,
-      );
+      ), (response) => {
       navigate('/match/result', { state: { result: (response as any).result || response } });
-    } catch (err: any) {
-      if (err?.status === 401) {
-        logout();
-        navigate('/login');
-        return;
-      }
-      setError(err?.message || 'Failed to match resume with job description.');
-    } finally {
-      setIsLoading(false);
-    }
+    }, unauthorized);
   };
 
   const selectTab = (tab: DashboardTab) => {
+    if (isLoading) return;
     setActiveTab(tab);
     setError(null);
+    analysis.clearResumeError();
   };
 
   return (
@@ -131,6 +122,7 @@ export const DashboardPage: React.FC = () => {
       <div className={styles.toolbar}>
         <SegmentedControl
           label="Analysis workspace"
+          disabled={isLoading}
           value={activeTab}
           onChange={selectTab}
           options={[
@@ -142,6 +134,7 @@ export const DashboardPage: React.FC = () => {
       </div>
 
       {error && <Alert tone="error">{error}</Alert>}
+      {analysis.resumeError && <Alert tone="error">{analysis.resumeError}</Alert>}
 
       {activeTab === 'resume' && (
         <form className={styles.workspace} onSubmit={handleResumeSubmit}>
@@ -159,10 +152,11 @@ export const DashboardPage: React.FC = () => {
               onChange={(file) => choosePdf(file, setResumeFile, 'Please select a valid PDF file.')}
             />
             <div className={styles.actionRow}>
-              <Button type="submit" disabled={isLoading || !resumeFile} icon={<ArrowRight size={18} weight="bold" aria-hidden="true" />}>
-                {isLoading ? 'Uploading...' : 'Upload Resume'}
+              <Button type="submit" loading={analysis.resumePending} loadingLabel="Uploading..." disabled={isLoading || !resumeFile} icon={<ArrowRight size={18} weight="bold" aria-hidden="true" />}>
+                Upload Resume
               </Button>
             </div>
+            {analysis.resumePending && <div className={styles.pending}><Alert>Analyzing your resume. Your score and recommendations will appear when ready.</Alert></div>}
           </div>
           <aside className={styles.aside}>
             <FileText className={styles.asideIcon} size={34} weight="duotone" aria-hidden="true" />
@@ -197,6 +191,7 @@ export const DashboardPage: React.FC = () => {
               <div className={styles.columnHeader}><h3>Job description</h3><Badge tone="accent">Required</Badge></div>
               <SegmentedControl
                 label="Job description input mode"
+                disabled={isLoading}
                 value={jdInputMode}
                 onChange={setJdInputMode}
                 options={[
@@ -229,10 +224,14 @@ export const DashboardPage: React.FC = () => {
             <input id="target-role" type="text" placeholder="e.g. Senior Backend Engineer" value={targetRole} onChange={(event) => setTargetRole(event.target.value)} disabled={isLoading} />
           </div>
           <div className={styles.actionRow}>
-            <Button type="submit" disabled={isLoading || !matchFile || !isJdValid} icon={<Target size={18} weight="bold" aria-hidden="true" />}>
-              {isLoading ? 'Running Match & ATS Analysis...' : 'Run Job Match & ATS Analysis'}
+            <Button type="submit" loading={analysis.matchStatus === 'pending' || analysis.matchStatus === 'success'} loadingLabel="Running analysis..." disabled={isLoading || !matchFile || !isJdValid} icon={<Target size={18} weight="bold" aria-hidden="true" />}>
+              Run Job Match & ATS Analysis
             </Button>
           </div>
+          <MatchProgress status={analysis.matchStatus} error={analysis.matchError}
+            minimized={matchMinimized && analysis.matchStatus !== 'error'}
+            onMinimize={() => setMatchMinimized(true)} onExpand={() => setMatchMinimized(false)}
+            onClose={analysis.closeMatchError} onRetry={() => { void handleMatchSubmit(); }} />
         </form>
       )}
 
@@ -240,6 +239,7 @@ export const DashboardPage: React.FC = () => {
         <section className={styles.panel} data-testid="history-tab">
           <div className={styles.panelHeader}><h2>Your Analysis History</h2><p>A concise record of the latest resume and job-match analyses.</p></div>
           {historyLoading && <LoadingSkeleton label="Loading history..." />}
+          {historyError && <Alert tone="error"><p>{historyError}</p><Button type="button" variant="secondary" disabled={historyLoading} onClick={() => setHistoryAttempt((attempt) => attempt + 1)}>Try again</Button></Alert>}
           {!historyLoading && history && history.items.length === 0 && <EmptyState title="No previous analyses found." description="Run your first resume score or job match to build a history." />}
           {!historyLoading && history && history.items.length > 0 && (
             <ul className={styles.history}>

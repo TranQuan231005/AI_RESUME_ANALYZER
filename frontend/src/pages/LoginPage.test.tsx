@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { AuthProvider } from '../context/AuthContext';
 import { LoginPage } from './LoginPage';
@@ -76,5 +76,22 @@ describe('LoginPage', () => {
 
     expect((await screen.findByRole('alert')).textContent).toBe('Invalid email or password.');
     expect(screen.queryByText('secret')).toBeNull();
+  });
+
+  test('blocks repeated form submissions and ignores a response after leaving login', async () => {
+    let resolve!: (value: unknown) => void;
+    (global.fetch as jest.Mock).mockReturnValue(new Promise((done) => { resolve = done; }));
+    const { unmount } = render(<MemoryRouter><AuthProvider><LoginPage /></AuthProvider></MemoryRouter>);
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'preview@example.test' } });
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'test-password' } });
+    const form = screen.getByRole('button', { name: 'Sign in' }).closest('form')!;
+    fireEvent.submit(form);
+    fireEvent.submit(form);
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+    expect((screen.getByLabelText('Email') as HTMLInputElement).disabled).toBe(true);
+    expect(screen.getByRole('button', { name: /signing in/i }).getAttribute('aria-busy')).toBe('true');
+    unmount();
+    await act(async () => resolve({ ok: true, json: async () => ({ accessToken: 'late-test-token', user: { id: 1, email: 'preview@example.test', fullName: 'Preview', role: 'USER' } }) }));
+    expect(sessionStorage.getItem('accessToken')).toBeNull();
   });
 });
