@@ -1,6 +1,6 @@
 # AI Resume Analyzer
 
-Documentation: [guides](docs/README.md) · [evaluation guide](evaluation/README.md).
+Documentation: [guides](docs/README.md) · [evaluation guide](evaluation/README.md) · [presentation guide](docs/PROJECT_PRESENTATION.md) · [team assignments](docs/TEAM_ASSIGNMENTS.md).
 
 Qwen3 0.6B is the default runtime model. See [Ollama setup and diagnostics](docs/project/OLLAMA_LOCAL_DEMO.md) for startup commands. Published human-review scores describe the historical Qwen 4B run, not the current 0.6B model.
 
@@ -149,6 +149,14 @@ Sau khi các service khởi động:
 
 Dừng stack bằng `Ctrl+C`. Dùng `docker compose down` để dừng và xóa containers; volume MySQL vẫn được giữ lại.
 
+Nếu các cổng mặc định hoặc tên container đang được dùng bởi một stack khác, dùng cấu hình local với project name riêng:
+
+```powershell
+docker compose -p ai-resume-online -f docker-compose.yml -f docker-compose.local.yml up --build --detach
+```
+
+Stack local dùng frontend `15173`, backend `18080`, AI service `18000` và MySQL `13306`. Dừng đúng stack bằng cùng project name và file Compose; không dùng `down --volumes` nếu cần giữ dữ liệu demo.
+
 ## Tài khoản demo
 
 Khi chạy Docker Compose, seed accounts được bật mặc định và được tạo idempotent:
@@ -246,6 +254,8 @@ Resume score gồm 8 nhóm tiêu chí. Classifier chọn một trong năm lĩnh 
 
 Matching chia CV/JD thành chunk tối đa khoảng 180 từ, encode normalized embeddings 384 chiều và lấy cosine tốt nhất cho từng JD chunk. Điểm production kết hợp semantic score với skill coverage theo `ai-service/models/matching/metadata.json`; JD không có recognized skill dùng semantic 100%. Nếu embedding không tải được, response ghi rõ `SKILL_ONLY`. TF-IDF chỉ còn là baseline evaluation.
 
+Cấu hình runtime hiện tại dùng `0.7 × skill score + 0.3 × semantic score`. Báo cáo calibration có thể ghi alpha khác vì evaluator tạo cấu hình tạm để benchmark; không gộp hai kết quả thành một metric production nếu chưa đồng bộ lại metadata.
+
 Embedding dùng `sentence-transformers/all-MiniLM-L6-v2` (Apache-2.0), khóa revision `f5610b47471b118dafc55f4c387822dbfc8413ae`. Docker tải revision này ở build time và runtime không tải mạng.
 
 `ai` metadata chỉ mô tả Ollama enrichment. Model matching nằm trong `matchBreakdown`, tránh trộn hai khái niệm.
@@ -316,6 +326,8 @@ Thư mục [`sample_files/resumes/`](sample_files/resumes/) chứa CV synthetic 
 
 250 CV in-domain và 100 OOD đều là synthetic controlled benchmark, không chứng minh hiệu quả trên CV thực tế. Matching đã có hai reviewer cho đủ 70 cặp và báo cáo đã được công bố; MAE cao và Spearman gần 0 giới hạn khả năng khẳng định chất lượng xếp hạng. Báo cáo LLM hiện có thuộc Qwen3 4B, không áp dụng cho model mặc định 0.6B. LLM schema-only chỉ kiểm tra cấu trúc/validator. Xem [`evaluation/reports/`](evaluation/reports/).
 
+Human review LLM đánh giá các output Qwen3 4B đã lưu. Nếu cần công bố chất lượng Qwen3 0.6B, phải sinh output 0.6B mới và thu review độc lập mới; không chuyển điểm 4B sang 0.6B.
+
 ## Giới hạn phạm vi MVP
 
 - Không có registration hoặc refresh token.
@@ -329,6 +341,8 @@ Thư mục [`sample_files/resumes/`](sample_files/resumes/) chứa CV synthetic 
 - [Ollama setup and diagnostics](docs/project/OLLAMA_LOCAL_DEMO.md).
 - [Evaluation and review evidence](evaluation/README.md).
 - [API specifications](contracts/openapi/) and [fixtures](contracts/fixtures/).
+- [Presentation and defense guide](docs/PROJECT_PRESENTATION.md).
+- [Current team assignments](docs/TEAM_ASSIGNMENTS.md).
 
 ## License
 

@@ -9,14 +9,14 @@ services:
       MYSQL_USER: ${DB_USER:-analyzer_user}
       MYSQL_PASSWORD: ${DB_PASSWORD:-analyzer_pass}
     ports:
-      - "${DB_PORT:-3306}:3306"
+      - "${DB_PORT:-3307}:3306"
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD:-rootpassword}"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
+      interval: 10s
+      timeout: 10s
+      retries: 30
 
   ai-service:
     build:
