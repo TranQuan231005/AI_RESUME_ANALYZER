@@ -1,5 +1,5 @@
-import React from 'react';
-import { FilePdf, Info, UploadSimple, WarningCircle, X } from '@phosphor-icons/react';
+import React, { useRef, useState } from 'react';
+import { CheckCircle, CircleNotch, FilePdf, Info, UploadSimple, WarningCircle, X } from '@phosphor-icons/react';
 import styles from './ui.module.css';
 
 type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
@@ -8,12 +8,14 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
   fullWidth?: boolean;
   icon?: React.ReactNode;
+  loading?: boolean;
+  loadingLabel?: string;
 }
 
-export const Button: React.FC<ButtonProps> = ({ variant = 'primary', fullWidth = false, icon, className = '', children, ...props }) => (
-  <button className={`${styles.button} ${styles[variant]} ${fullWidth ? styles.fullWidth : ''} ${className}`} {...props}>
-    {icon}
-    {children}
+export const Button: React.FC<ButtonProps> = ({ variant = 'primary', fullWidth = false, icon, loading = false, loadingLabel, disabled, className = '', children, ...props }) => (
+  <button className={`${styles.button} ${styles[variant]} ${fullWidth ? styles.fullWidth : ''} ${className}`} {...props} disabled={disabled || loading} aria-busy={loading || undefined}>
+    {loading ? <CircleNotch className={styles.spinner} size={18} weight="bold" aria-hidden="true" /> : icon}
+    {loading && loadingLabel ? loadingLabel : children}
   </button>
 );
 
@@ -48,10 +50,12 @@ interface SegmentedControlProps<T extends string> {
   options: SegmentOption<T>[];
   onChange: (value: T) => void;
   label: string;
+  disabled?: boolean;
 }
 
-export function SegmentedControl<T extends string>({ value, options, onChange, label }: SegmentedControlProps<T>) {
+export function SegmentedControl<T extends string>({ value, options, onChange, label, disabled = false }: SegmentedControlProps<T>) {
   const handleKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
+    if (disabled) return;
     if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
     event.preventDefault();
     let nextIndex = index;
@@ -70,10 +74,11 @@ export function SegmentedControl<T extends string>({ value, options, onChange, l
         <button
           key={option.value}
           type="button"
+          disabled={disabled}
           data-testid={option.testId}
           className={`${styles.segment} ${option.value === value ? styles.segmentActive : ''}`}
           aria-pressed={option.value === value}
-          onClick={() => onChange(option.value)}
+          onClick={() => { if (!disabled) onChange(option.value); }}
           onKeyDown={(event) => handleKeyDown(event, index)}
         >
           {option.icon}{option.label}
@@ -94,15 +99,24 @@ interface FileDropzoneProps {
 }
 
 export const FileDropzone: React.FC<FileDropzoneProps> = ({ id, label, file, accept = 'application/pdf', disabled = false, helperText, onChange }) => {
-  const handleInput = (event: React.ChangeEvent<HTMLInputElement>) => onChange(event.target.files?.[0] ?? null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [dragging, setDragging] = useState(false);
+  const handleInput = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!disabled && event.target.files?.length) onChange(event.target.files[0]);
+    event.target.value = '';
+  };
   const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
+    setDragging(false);
     if (!disabled) onChange(event.dataTransfer.files?.[0] ?? null);
   };
 
   return (
-    <div className={`${styles.dropzone} ${file ? styles.dropzoneSelected : ''} ${disabled ? styles.dropzoneDisabled : ''}`} onDragOver={(event) => event.preventDefault()} onDrop={handleDrop}>
-      <input id={id} className="sr-only" type="file" accept={accept} disabled={disabled} onChange={handleInput} />
+    <div className={`${styles.dropzone} ${file ? styles.dropzoneSelected : ''} ${disabled ? styles.dropzoneDisabled : ''} ${dragging && !disabled ? styles.dropzoneDragging : ''}`}
+      onDragEnter={(event) => { event.preventDefault(); if (!disabled) setDragging(true); }}
+      onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDragging(false); }}
+      onDragOver={(event) => event.preventDefault()} onDrop={handleDrop}>
+      <input ref={inputRef} id={id} className="sr-only" type="file" accept={accept} disabled={disabled} onChange={handleInput} />
       {file ? (
         <div className={styles.fileRow}>
           <label className="sr-only" htmlFor={id}>{label}</label>
@@ -110,8 +124,9 @@ export const FileDropzone: React.FC<FileDropzoneProps> = ({ id, label, file, acc
           <span>
             <span className={styles.fileName}>{file.name}</span>
             <span className={styles.fileMeta}>{(file.size / 1024).toFixed(1)} KB</span>
+            <span className={styles.fileReady} role="status"><CheckCircle size={14} weight="fill" aria-hidden="true" />Ready to analyze</span>
           </span>
-          <IconButton type="button" label={`Remove ${file.name}`} onClick={(event) => { event.preventDefault(); onChange(null); }}>
+          <IconButton type="button" disabled={disabled} label={`Remove ${file.name}`} onClick={(event) => { event.preventDefault(); if (!disabled) { onChange(null); if (inputRef.current) { inputRef.current.value = ''; inputRef.current.focus(); } } }}>
             <X size={18} weight="bold" aria-hidden="true" />
           </IconButton>
         </div>
@@ -146,7 +161,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ title, description, acti
 export const LoadingSkeleton: React.FC<{ label: string; testId?: string }> = ({ label, testId }) => (
   <div className={styles.skeleton} role="status" data-testid={testId} aria-label={label}>
     <span className={styles.skeletonLine} /><span className={styles.skeletonLine} /><span className={styles.skeletonLine} />
-    <span className="sr-only">{label}</span>
+    <span className={styles.loadingLabel}>{label}</span>
   </div>
 );
 

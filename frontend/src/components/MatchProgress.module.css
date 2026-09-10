@@ -1,0 +1,46 @@
+.dialog {
+  width: min(460px, calc(100vw - 2rem));
+  max-height: calc(100dvh - 2rem);
+  margin: auto;
+  padding: clamp(1.25rem, 5vw, 2.5rem);
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+.dialog[open] { animation: arrive 180ms ease-out; }
+.dialog::backdrop { background: rgb(23 23 20 / 48%); backdrop-filter: blur(4px); }
+.dialog h2, .inline h2 { margin: 1rem 0 0.65rem; font-size: 1.65rem; letter-spacing: -0.045em; }
+.message { min-height: 3rem; margin: 0; color: var(--ink-soft); line-height: 1.6; overflow-wrap: anywhere; }
+.illustration { position: relative; display: grid; place-items: center; width: 112px; height: 112px; margin: 0 auto; color: var(--accent); }
+.scanning > svg:first-child { animation: float 2.4s ease-in-out infinite; }
+.scanLine { position: absolute; top: 20%; left: 15%; width: 70%; height: 2px; background: var(--accent); box-shadow: 0 4px 12px var(--accent-soft); animation: scan 2s ease-in-out infinite; }
+.sparkle { position: absolute; right: 0; top: 8%; animation: float 2.4s ease-in-out infinite reverse; }
+.progressGroup { margin-top: 1.4rem; }
+.progressLabel { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin-bottom: 0.75rem; font-size: 0.78rem; color: var(--ink-soft); }
+.progressLabel strong { color: var(--ink); font-family: var(--font-mono); font-size: 1.6rem; font-variant-numeric: tabular-nums; }
+.progressGroup progress { display: block; appearance: none; width: 100%; height: 8px; border: 0; overflow: hidden; border-radius: var(--radius-pill); background: var(--surface-muted); accent-color: var(--accent); }
+.progressGroup progress::-webkit-progress-bar { background: var(--surface-muted); border-radius: var(--radius-pill); }
+.progressGroup progress::-webkit-progress-value { background: var(--accent); border-radius: var(--radius-pill); transition: width 250ms linear; }
+.progressGroup progress::-moz-progress-bar { background: var(--accent); border-radius: var(--radius-pill); }
+.waiting { display: flex; justify-content: center; gap: 6px; margin-top: 1.25rem; }
+.waiting i { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); animation: dot 1.2s ease-in-out infinite; }
+.waiting i:nth-child(2) { animation-delay: 150ms; }
+.waiting i:nth-child(3) { animation-delay: 300ms; }
+.actions { display: flex; flex-wrap: wrap; gap: 0.75rem; justify-content: center; }
+.actions:not(:empty) { margin-top: 1.25rem; }
+.inline { margin-top: 1.5rem; padding: 1.25rem; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface-strong); text-align: center; }
+.inline .illustration { display: none; }
+.inline h2 { font-size: 1.2rem; margin-top: 0; }
+@keyframes arrive { from { opacity: 0; transform: translateY(8px) scale(0.98); } to { opacity: 1; transform: none; } }
+@keyframes float { 50% { transform: translateY(-5px) rotate(-3deg); } }
+@keyframes scan { 50% { transform: translateY(62px); } }
+@keyframes dot { 50% { opacity: 0.35; transform: translateY(-3px); } }
+@media (prefers-reduced-motion: reduce) {
+  .dialog[open], .scanning > svg:first-child, .scanLine, .sparkle, .waiting i { animation: none; }
+  .progressGroup progress::-webkit-progress-value { transition: none; }
+}
+@media (prefers-reduced-transparency: reduce) { .dialog::backdrop { backdrop-filter: none; background: rgb(23 23 20 / 70%); } }

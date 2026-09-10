@@ -1,4 +1,5 @@
 .page { display: block; }
+.pending { margin-top: 1rem; }
 .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 2rem; }
 .workspace {
   display: grid;

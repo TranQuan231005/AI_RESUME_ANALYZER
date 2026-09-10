@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { ChartDonut, Clock, FileText, Gauge, Target, Users } from '@phosphor-icons/react';
 import { useAuth } from '../context/AuthContext';
 import { getAdminMetrics, getAdminUsers, getAdminAnalyses } from '../api/admin';
-import { Alert, Badge, LoadingSkeleton, PageHeader } from '../components/ui';
+import { Alert, Badge, Button, LoadingSkeleton, PageHeader } from '../components/ui';
 import type {
   AdminMetricsResponse,
   PagedUsers,
@@ -17,38 +17,49 @@ export const AdminPage: React.FC = () => {
   const [analyses, setAnalyses] = useState<PagedAdminAnalyses | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     if (!token) return;
+    let active = true;
 
     const fetchAdminData = async () => {
       setLoading(true);
       setError(null);
+      setMetrics(null);
+      setUsers(null);
+      setAnalyses(null);
       try {
         const [metricsData, usersData, analysesData] = await Promise.all([
           getAdminMetrics(token),
           getAdminUsers(token, 0, 10),
           getAdminAnalyses(token, 0, 10),
         ]);
+        if (!active) return;
         setMetrics(metricsData);
         setUsers(usersData);
         setAnalyses(analysesData);
       } catch (err: any) {
-        setError(err.message || 'Failed to load admin data');
+        if (active) setError(err?.message || 'Failed to load admin data');
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     };
 
     fetchAdminData();
-  }, [token]);
+    return () => { active = false; };
+  }, [token, attempt]);
 
   return (
     <section className={styles.page} data-testid="admin-page">
       <PageHeader eyebrow="System overview" title="Admin dashboard" description="Review analysis activity, model behavior, and the health of the local AI workflow." />
 
-      {loading && <LoadingSkeleton label="Loading admin metrics..." />}
-      {error && <Alert tone="error">{error}</Alert>}
+      {loading && <>
+        <div className={styles.metrics}>{Array.from({ length: 6 }, (_, index) => <LoadingSkeleton key={index} label={`Loading metric ${index + 1}...`} />)}</div>
+        <LoadingSkeleton label="Loading registered users..." />
+        <LoadingSkeleton label="Loading recent analyses..." />
+      </>}
+      {error && <Alert tone="error"><p>{error}</p><Button type="button" variant="secondary" disabled={loading} onClick={() => setAttempt((value) => value + 1)}>Try again</Button></Alert>}
 
       {metrics && (
         <section data-testid="admin-metrics-section">
@@ -75,6 +86,7 @@ export const AdminPage: React.FC = () => {
               </tr>
             </thead>
             <tbody>
+              {users.items.length === 0 && <tr><td colSpan={4}>No registered users.</td></tr>}
               {users.items.map((u) => (
                 <tr key={u.id}>
                   <td className={styles.numeric}>{u.id}</td><td className={styles.primaryCell}>{u.email}</td><td>{u.fullName}</td><td><Badge tone={u.role === 'ADMIN' ? 'accent' : 'neutral'}>{u.role}</Badge></td>
@@ -96,6 +108,7 @@ export const AdminPage: React.FC = () => {
               </tr>
             </thead>
             <tbody>
+              {analyses.items.length === 0 && <tr><td colSpan={8}>No analyses yet.</td></tr>}
               {analyses.items.map((a) => (
                 <tr key={a.id}>
                   <td className={styles.numeric}>{a.id}</td><td><Badge tone={a.analysisType === 'RESUME' ? 'accent' : 'neutral'}>{a.analysisType}</Badge></td><td className={styles.primaryCell}>{a.fileName}</td><td className={styles.numeric}>{a.resumeScore ?? a.matchScore ?? '-'}</td><td>{a.aiProvider}</td><td><Badge tone={a.usedFallback ? 'warning' : 'success'}>{a.usedFallback ? 'Yes' : 'No'}</Badge></td><td>{new Date(a.createdAt).toLocaleString()}</td>
