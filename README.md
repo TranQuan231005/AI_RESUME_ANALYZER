@@ -10,24 +10,40 @@ AI Resume Analyzer là ứng dụng web chạy local giúp đánh giá CV tiến
 
 ## Giao diện
 
-### User Dashboard
+### 1. User Dashboard — Resume Scoring
+Upload CV dạng PDF để phân tích chất lượng cấu trúc, trích xuất kỹ năng và phân loại nhóm chuyên môn:
 
-![User Dashboard](docs/images/user-dashboard.png)
+![User Dashboard - Resume Scoring](docs/images/user-dashboard.png)
 
-<details>
-<summary>Xem thêm màn hình Login và Admin Dashboard</summary>
+### 2. Resume Analysis Result
+Báo cáo chi tiết điểm số 8 tiêu chí, phân loại lĩnh vực kèm độ tin cậy, bằng chứng từ khóa và đề xuất cải thiện:
 
-### Login
+![Resume Analysis Result](docs/images/resume-result.png)
 
-![Login](docs/images/login.png)
+### 3. Job Match & ATS Analysis
+So khớp CV ứng viên với bản mô tả công việc (hỗ trợ cả JD PDF và text) để phân tích độ phù hợp:
 
-### Admin Dashboard
+![Job Match & ATS](docs/images/job-match.png)
+
+### 4. Job Match Result
+Kết quả so khớp trực quan gồm điểm Hybrid Embedding, kỹ năng phù hợp, khoảng trống kỹ năng và ATS keywords:
+
+![Job Match Result](docs/images/match-result.png)
+
+### 5. Admin Dashboard
+Bảng điều khiển dành cho Admin theo dõi chỉ số telemetry toàn hệ thống: tổng lượt phân tích, tỷ lệ fallback, độ trễ P95/Avg, danh sách người dùng và bảng lịch sử phân tích gần nhất:
 
 ![Admin Dashboard](docs/images/admin-dashboard.png)
 
-> Admin Dashboard trong ảnh sử dụng dữ liệu demo để minh họa đầy đủ trạng thái KPI và bảng dữ liệu.
+### 6. Analysis History
+Quản lý và tra cứu lịch sử các lượt phân tích và so khớp của người dùng:
 
-</details>
+![Analysis History](docs/images/analysis-history.png)
+
+### 7. Login
+Xác thực người dùng với JWT và hỗ trợ tài khoản demo phân quyền `USER` / `ADMIN`:
+
+![Login](docs/images/login.png)
 
 ## Tính năng chính
 
